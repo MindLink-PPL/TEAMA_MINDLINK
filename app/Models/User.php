@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -56,6 +57,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the wellbeing check-ins recorded by this student.
+     */
+    public function wellbeingCheckins(): HasMany
+    {
+        return $this->hasMany(WellbeingCheckin::class);
+    }
+
+    /**
+     * Get the counselling requests / appointments for this student.
+     */
+    public function counsellingRequests(): HasMany
+    {
+        return $this->hasMany(CounsellingRequest::class);
+    }
+
+    /**
      * Check if the user has a specific role or one of given roles.
      */
     public function hasRole(string|array $roles): bool
@@ -64,11 +81,20 @@ class User extends Authenticatable
             return false;
         }
 
-        if (is_array($roles)) {
-            return in_array($this->role->slug, $roles);
+        $roles = is_array($roles) ? $roles : [$roles];
+        $userSlug = $this->role->slug;
+
+        foreach ($roles as $role) {
+            if ($userSlug === $role) {
+                return true;
+            }
+
+            if (in_array($role, ['student', 'user'], true) && in_array($userSlug, ['student', 'user'], true)) {
+                return true;
+            }
         }
 
-        return $this->role->slug === $roles;
+        return false;
     }
 
     /**

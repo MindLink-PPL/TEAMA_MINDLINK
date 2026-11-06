@@ -280,60 +280,185 @@
         <!-- ========================================== -->
         <div class="space-y-6">
             <div>
-                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Good morning, {{ Auth::user()->name }}</h2>
-                <p class="text-sm text-slate-500 mt-0.5">Choose a private next step that feels manageable today.</p>
+                <h2 class="text-2xl font-bold text-[#0f2a4a] tracking-tight">Good morning, {{ Auth::user()->name }}</h2>
+                <p class="text-sm text-slate-500 mt-1">Choose a private next step that feels manageable today.</p>
             </div>
 
-            <!-- Student Action Cards -->
+            <!-- Student Action Cards (PG-01 Exact Match) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div class="p-6 rounded-2xl bg-[#ebf8f3] border border-[#bbf7d0] shadow-2xs">
-                    <h3 class="font-bold text-base text-slate-900">Check in</h3>
-                    <p class="text-xs text-slate-500 mt-1">Record how you feel and receive confidential reflection.</p>
+                <!-- Card 1: Check in -->
+                <div class="p-6 rounded-2xl bg-[#e6f5f0] border border-[#cdece2] shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-base text-[#0f2a4a]">Check in</h3>
+                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                            Record how you feel and receive non-diagnostic guidance.
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ route('student.wellbeing') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#1c9c8c] hover:text-[#0f766e] transition">
+                            <span>Start check-in</span>
+                            <span>&gt;</span>
+                        </a>
+                    </div>
                 </div>
 
-                <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <h3 class="font-bold text-base text-slate-900">Request counselling</h3>
-                    <p class="text-xs text-slate-500 mt-1">Submit a private request and choose an available slot.</p>
+                <!-- Card 2: Request counselling -->
+                <div class="p-6 rounded-2xl bg-[#f8fafc] border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-base text-[#0f2a4a]">Request counselling</h3>
+                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                            Submit a private request and choose an available time.
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ route('student.counselling') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#0f2a4a] hover:text-[#1c9c8c] transition">
+                            <span>Request support</span>
+                            <span>&gt;</span>
+                        </a>
+                    </div>
                 </div>
 
-                <div class="p-6 rounded-2xl bg-[#fef4ea] border border-[#fed7aa] shadow-2xs">
-                    <h3 class="font-bold text-base text-slate-900">Learn about mental health</h3>
-                    <p class="text-xs text-slate-500 mt-1">Read practical articles reviewed by authorised staff.</p>
+                <!-- Card 3: Learn about mental health -->
+                <div class="p-6 rounded-2xl bg-[#fff3e6] border border-[#fde2c8] shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-base text-[#0f2a4a]">Learn about mental health</h3>
+                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                            Read practical articles reviewed by authorised staff.
+                        </p>
+                    </div>
+                    <div class="mt-4">
+                        <a href="{{ route('student.literacy') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#f58a42] hover:text-[#ea580c] transition">
+                            <span>Browse articles</span>
+                            <span>&gt;</span>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <!-- Wellbeing reflection prompt -->
-            <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
-                <h3 class="text-base font-bold text-slate-900">How are you feeling today?</h3>
-                <p class="text-xs text-slate-500 mt-0.5 mb-6">Your answers always remain private and can be changed later.</p>
+            <!-- Bottom Grid: How are you feeling today? (Left) & Upcoming appointment + Need urgent help? (Right) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Column: Wellbeing reflection prompt -->
+                <div
+                    class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-2xs flex flex-col justify-between"
+                    x-data="{ selectedMood: '{{ $latestMood ?? 'Good' }}' }"
+                >
+                    <form method="POST" action="{{ route('student.mood.store') }}">
+                        @csrf
+                        <input type="hidden" name="mood" :value="selectedMood">
 
-                <div class="flex items-center gap-4 sm:gap-6">
-                    <div class="text-center">
-                        <div class="w-10 h-10 rounded-full bg-[#fca5a5] mx-auto cursor-pointer hover:scale-110 transition"></div>
-                        <span class="text-[11px] text-slate-500 block mt-1">Very low</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-10 h-10 rounded-full bg-[#fdba74] mx-auto cursor-pointer hover:scale-110 transition"></div>
-                        <span class="text-[11px] text-slate-500 block mt-1">Low</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-10 h-10 rounded-full bg-[#fef08a] mx-auto cursor-pointer hover:scale-110 transition"></div>
-                        <span class="text-[11px] text-slate-500 block mt-1">Okay</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-10 h-10 rounded-full bg-[#86efac] mx-auto cursor-pointer hover:scale-110 transition"></div>
-                        <span class="text-[11px] text-slate-500 block mt-1">Good</span>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-10 h-10 rounded-full bg-[#14b8a6] mx-auto cursor-pointer hover:scale-110 transition"></div>
-                        <span class="text-[11px] text-slate-500 block mt-1">Great</span>
-                    </div>
+                        <h3 class="text-lg font-bold text-[#0f2a4a]">How are you feeling today?</h3>
+                        <p class="text-xs text-slate-500 mt-1 mb-7">Your answer stays private and can be changed later.</p>
+
+                        <div class="grid grid-cols-5 gap-3 sm:gap-5 max-w-lg">
+                            <!-- Very low -->
+                            <button
+                                type="button"
+                                @click="selectedMood = 'Very low'"
+                                class="flex flex-col items-center group focus:outline-none"
+                            >
+                                <span
+                                    :class="selectedMood === 'Very low' ? 'ring-4 ring-[#d9534f]/30 scale-110' : 'opacity-90 hover:scale-105'"
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#d9534f] transition transform block shadow-2xs"
+                                ></span>
+                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Very low</span>
+                            </button>
+
+                            <!-- Low -->
+                            <button
+                                type="button"
+                                @click="selectedMood = 'Low'"
+                                class="flex flex-col items-center group focus:outline-none"
+                            >
+                                <span
+                                    :class="selectedMood === 'Low' ? 'ring-4 ring-[#f58a42]/30 scale-110' : 'opacity-90 hover:scale-105'"
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#f58a42] transition transform block shadow-2xs"
+                                ></span>
+                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Low</span>
+                            </button>
+
+                            <!-- Okay -->
+                            <button
+                                type="button"
+                                @click="selectedMood = 'Okay'"
+                                class="flex flex-col items-center group focus:outline-none"
+                            >
+                                <span
+                                    :class="selectedMood === 'Okay' ? 'ring-4 ring-[#e5b84b]/30 scale-110' : 'opacity-90 hover:scale-105'"
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#e5b84b] transition transform block shadow-2xs"
+                                ></span>
+                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Okay</span>
+                            </button>
+
+                            <!-- Good -->
+                            <button
+                                type="button"
+                                @click="selectedMood = 'Good'"
+                                class="flex flex-col items-center group focus:outline-none"
+                            >
+                                <span
+                                    :class="selectedMood === 'Good' ? 'ring-4 ring-[#489e64]/30 scale-110' : 'opacity-90 hover:scale-105'"
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#489e64] transition transform block shadow-2xs"
+                                ></span>
+                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Good</span>
+                            </button>
+
+                            <!-- Great -->
+                            <button
+                                type="button"
+                                @click="selectedMood = 'Great'"
+                                class="flex flex-col items-center group focus:outline-none"
+                            >
+                                <span
+                                    :class="selectedMood === 'Great' ? 'ring-4 ring-[#1c9c8c]/30 scale-110' : 'opacity-90 hover:scale-105'"
+                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#1c9c8c] transition transform block shadow-2xs"
+                                ></span>
+                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Great</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-8">
+                            <button
+                                type="submit"
+                                class="px-5 py-2.5 bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold rounded-xl transition shadow-2xs"
+                            >
+                                Save response
+                            </button>
+                        </div>
+                    </form>
                 </div>
 
-                <div class="mt-6">
-                    <button type="button" class="px-5 py-2.5 bg-[#0d9488] text-white text-xs font-bold rounded-xl hover:bg-[#0f766e] transition">
-                        Save response
-                    </button>
+                <!-- Right Column: Upcoming appointment + Need urgent help? -->
+                <div class="lg:col-span-5 space-y-5">
+                    <!-- Top Card: Upcoming appointment -->
+                    <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
+                        <h3 class="text-lg font-bold text-[#0f2a4a]">Upcoming appointment</h3>
+
+                        <div class="mt-2.5">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
+                                {{ $upcomingAppointment?->status ?? 'Confirmed' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 text-sm font-bold text-[#0f2a4a]">
+                            {{ $upcomingAppointment?->scheduled_date ?? 'Wednesday, 21 October 2026' }}
+                        </div>
+
+                        <div class="mt-1 text-xs text-slate-500">
+                            @if ($upcomingAppointment)
+                                {{ $upcomingAppointment->scheduled_time }} &bull; {{ explode('•', $upcomingAppointment->counsellor_name)[0] ? trim(explode('•', $upcomingAppointment->counsellor_name)[0]) . ', Counsellor' : $upcomingAppointment->counsellor_name }}
+                            @else
+                                10:00–11:00 &bull; Alisa, Counsellor
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Bottom Card: Need urgent help? -->
+                    <div class="bg-[#133453] text-white rounded-2xl p-6 shadow-sm">
+                        <h3 class="text-base font-bold text-white">Need urgent help?</h3>
+                        <p class="text-xs text-slate-200 mt-2 leading-relaxed">
+                            MindLink is not an emergency service. Contact the listed campus or emergency support channel if you may be in immediate danger.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

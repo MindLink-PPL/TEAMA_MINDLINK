@@ -40,8 +40,8 @@ class RoleManagementController extends Controller
         // Statistics
         $totalUsers = User::count();
         $adminCount = User::whereHas('role', fn($q) => $q->where('slug', 'admin'))->count();
-        $managerCount = User::whereHas('role', fn($q) => $q->where('slug', 'manager'))->count();
-        $standardUserCount = User::whereHas('role', fn($q) => $q->where('slug', 'user'))->count();
+        $managerCount = User::whereHas('role', fn($q) => $q->whereIn('slug', ['counsellor', 'manager']))->count();
+        $standardUserCount = User::whereHas('role', fn($q) => $q->whereIn('slug', ['student', 'user']))->count();
 
         return view('admin.users.index', compact(
             'users',

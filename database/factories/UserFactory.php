@@ -40,7 +40,10 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role_id' => Role::firstOrCreate(
                 ['slug' => 'user'],
-                ['name' => 'User', 'description' => 'Standard user access.']
+                [
+                    'name' => 'Student',
+                    'description' => 'As a student, I want to access student-specific features so that I can manage my wellbeing and counselling activities securely.',
+                ]
             )->id,
         ];
     }
@@ -77,6 +80,22 @@ class UserFactory extends Factory
             'role_id' => Role::firstOrCreate(
                 ['slug' => 'manager'],
                 ['name' => 'Manager', 'description' => 'Team management access.']
+            )->id,
+        ]);
+    }
+
+    /**
+     * Set the user's role to student.
+     */
+    public function student(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::firstOrCreate(
+                ['slug' => 'user'],
+                [
+                    'name' => 'Student',
+                    'description' => 'As a student, I want to access student-specific features so that I can manage my wellbeing and counselling activities securely.',
+                ]
             )->id,
         ]);
     }

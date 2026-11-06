@@ -124,8 +124,8 @@
                         </div>
                         <p class="text-slate-600 mb-3">Wellbeing check-ins, mental health literacy, support requests.</p>
                         <div class="bg-white/80 p-2.5 rounded-lg border border-slate-200 font-mono text-slate-800 space-y-0.5">
-                            <div>Email: <strong class="text-slate-900">student@mindlink.com</strong></div>
-                            <div>Password: <strong>password</strong></div>
+                            <div>Email: <strong class="text-slate-900">student@gmail.com</strong></div>
+                            <div>Password: <strong>12345</strong></div>
                         </div>
                     </div>
                 </div>

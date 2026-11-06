@@ -136,44 +136,56 @@
                     </div>
 
                 @else
-                    <!-- Student Navigation (Matching PG-01 / PG-03 / PG-04) -->
+                    <!-- Student Navigation (Matching PG-01 / PG-02 / PG-03 / PG-04) -->
                     <a
                         href="{{ route('dashboard') }}"
-                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-[#1b3d66] text-white shadow-sm' : 'text-slate-300 hover:bg-[#153457] hover:text-white' }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
                     >
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#14b8a6] text-white">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             D
                         </div>
                         <span>Dashboard</span>
                     </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('student.literacy') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('student.literacy*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             L
                         </div>
                         <span>Learn</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('student.wellbeing') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('student.wellbeing*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             W
                         </div>
                         <span>Wellbeing</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('student.counselling') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('student.counselling*', 'student.schedule') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             C
                         </div>
                         <span>Counselling</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('student.notifications') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('student.notifications*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             N
                         </div>
                         <span>Notifications</span>
-                    </div>
+                    </a>
                 @endif
             </nav>
         </div>

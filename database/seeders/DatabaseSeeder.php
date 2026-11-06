@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\CounsellingRequest;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -31,7 +32,7 @@ class DatabaseSeeder extends Seeder
         $studentRole = Role::create([
             'name' => 'Student',
             'slug' => 'user',
-            'description' => 'Student user access. Conducts wellbeing check-ins, accesses literacy resources, and requests private support.',
+            'description' => 'As a student, I want to access student-specific features so that I can manage my wellbeing and counselling activities securely.',
         ]);
 
         // 2. Create Permissions
@@ -75,8 +76,26 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Student Wellbeing Portal',
                 'slug' => 'dashboard.view',
-                'module' => 'General',
-                'description' => 'Can access wellbeing check-ins, mental health literacy articles, and appointments.',
+                'module' => 'Student Portal',
+                'description' => 'Can access the student dashboard, daily mood reflection, and upcoming appointments.',
+            ],
+            [
+                'name' => 'Wellbeing Check-In',
+                'slug' => 'wellbeing.checkin',
+                'module' => 'Student Portal',
+                'description' => 'Can complete the quiz-like wellbeing reflection check-in and receive non-diagnostic guidance.',
+            ],
+            [
+                'name' => 'Mental Health Literacy',
+                'slug' => 'literacy.view',
+                'module' => 'Student Portal',
+                'description' => 'Can browse and search educational mental health literacy articles and topic guides.',
+            ],
+            [
+                'name' => 'Counselling & Scheduling',
+                'slug' => 'counselling.request',
+                'module' => 'Student Portal',
+                'description' => 'Can schedule available time slots and submit private counselling appointment requests.',
             ],
             [
                 'name' => 'Manage Personal Profile',
@@ -112,6 +131,9 @@ class DatabaseSeeder extends Seeder
 
         $studentRole->permissions()->attach([
             $createdPermissions['dashboard.view']->id,
+            $createdPermissions['wellbeing.checkin']->id,
+            $createdPermissions['literacy.view']->id,
+            $createdPermissions['counselling.request']->id,
             $createdPermissions['profile.manage']->id,
         ]);
 
@@ -143,20 +165,53 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        User::create([
-            'name' => 'Alex Rivera (Student)',
-            'email' => 'student@mindlink.com',
-            'password' => Hash::make('password'),
-            'role_id' => $studentRole->id,
-            'email_verified_at' => now(),
-        ]);
+        // Default test student — log in with Email: student@gmail.com / Password: 12345
+        $testStudent = User::updateOrCreate(
+            ['email' => 'student@gmail.com'],
+            [
+                'name' => 'Student',
+                'password' => Hash::make('12345'),
+                'role_id' => $studentRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
 
-        User::create([
-            'name' => 'John Doe (Student)',
-            'email' => 'john@mindlink.com',
-            'password' => Hash::make('password'),
-            'role_id' => $studentRole->id,
-            'email_verified_at' => now(),
-        ]);
+        $student1 = User::updateOrCreate(
+            ['email' => 'student@mindlink.com'],
+            [
+                'name' => 'Alex Rivera (Student)',
+                'password' => Hash::make('password'),
+                'role_id' => $studentRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        $student2 = User::updateOrCreate(
+            ['email' => 'john@mindlink.com'],
+            [
+                'name' => 'John Doe (Student)',
+                'password' => Hash::make('password'),
+                'role_id' => $studentRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        // Seed initial confirmed appointments for demo student accounts matching PG-01
+        foreach ([$testStudent, $student1] as $studentAccount) {
+            CounsellingRequest::firstOrCreate(
+                [
+                    'user_id' => $studentAccount->id,
+                    'scheduled_date' => 'Wednesday, 21 October 2026',
+                    'scheduled_time' => '10:00',
+                ],
+                [
+                    'counsellor_name' => 'Alisa • Student wellbeing',
+                    'concern' => 'Academic pressure and anxiety',
+                    'consent_accepted_at' => now()->subDays(8),
+                    'session_mode' => 'In person',
+                    'status' => 'Confirmed',
+                ]
+            );
+        }
     }
 }
