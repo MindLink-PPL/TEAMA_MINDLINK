@@ -98,8 +98,8 @@
                         </div>
                         <p class="text-slate-600 mb-3">Service overview, privacy boundaries, role &amp; user management.</p>
                         <div class="bg-white/80 p-2.5 rounded-lg border border-[#fed7aa] font-mono text-slate-800 space-y-0.5">
-                            <div>Email: <strong class="text-[#ea580c]">admin@mindlink.com</strong></div>
-                            <div>Password: <strong>password</strong></div>
+                            <div>Email: <strong class="text-[#ea580c]">admin@gmail.com</strong></div>
+                            <div>Password: <strong>12345</strong></div>
                         </div>
                     </div>
 

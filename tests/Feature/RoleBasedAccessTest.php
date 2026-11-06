@@ -31,9 +31,38 @@ class RoleBasedAccessTest extends TestCase
         $this->counsellorRole = Role::where('slug', 'counsellor')->first();
         $this->studentRole = Role::where('slug', 'user')->first();
 
-        $this->adminUser = User::where('email', 'admin@mindlink.com')->first();
+        $this->adminUser = User::where('email', 'admin@gmail.com')->first();
         $this->counsellorUser = User::where('email', 'counsellor@mindlink.com')->first();
         $this->standardUser = User::where('email', 'student@mindlink.com')->first();
+    }
+
+    public function test_default_admin_account_is_seeded_with_admin_role(): void
+    {
+        $this->assertNotNull($this->adminUser);
+        $this->assertEquals('Admin', $this->adminUser->name);
+        $this->assertEquals('admin@gmail.com', $this->adminUser->email);
+        $this->assertTrue($this->adminUser->isAdmin());
+    }
+
+    public function test_default_admin_can_log_in_with_email_and_password_12345(): void
+    {
+        $response = $this->post('/login', [
+            'email' => 'admin@gmail.com',
+            'password' => '12345',
+        ]);
+
+        $this->assertAuthenticatedAs($this->adminUser);
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_default_admin_cannot_log_in_with_wrong_password(): void
+    {
+        $this->post('/login', [
+            'email' => 'admin@gmail.com',
+            'password' => 'wrong',
+        ]);
+
+        $this->assertGuest();
     }
 
     public function test_guest_is_redirected_to_login_when_accessing_role_management(): void
@@ -63,7 +92,7 @@ class RoleBasedAccessTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('User &amp; Role Management', false);
-        $response->assertSee('System Administrator');
+        $response->assertSee('admin@gmail.com');
         $response->assertSee('Alisa Vance (Counsellor)');
         $response->assertSee('Alex Rivera (Student)');
         $response->assertSee('System Role &amp; Permission Matrix', false);

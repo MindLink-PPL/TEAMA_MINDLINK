@@ -116,13 +116,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 4. Create Institutional Accounts
-        User::create([
-            'name' => 'System Administrator',
-            'email' => 'admin@mindlink.com',
-            'password' => Hash::make('password'),
-            'role_id' => $adminRole->id,
-            'email_verified_at' => now(),
-        ]);
+        // Default test administrator — log in with Email: admin@gmail.com / Password: 12345
+        User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('12345'),
+                'role_id' => $adminRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
 
         User::create([
             'name' => 'Alisa Vance (Counsellor)',
