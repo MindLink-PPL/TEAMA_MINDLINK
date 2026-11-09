@@ -7,6 +7,12 @@ use App\Models\InformedConsent;
 
 class InformedConsentController extends Controller
 {
+    public function index()
+    {
+        $consents = InformedConsent::all();
+        return view('admin-consents', compact('consents'));
+    }
+
     public function store(Request $request)
     {
         $consent = new InformedConsent();

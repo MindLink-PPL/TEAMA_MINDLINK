@@ -15,3 +15,5 @@ Route::get('/test-consent', function () {
 use App\Http\Controllers\InformedConsentController;
 
 Route::post('/submit-consent', [InformedConsentController::class, 'store']);
+
+Route::get('/admin/consents', [InformedConsentController::class, 'index']);
