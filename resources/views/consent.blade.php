@@ -77,10 +77,9 @@
 <div class="consent-container">
     <h3>Informed Consent</h3>
     
-    <!-- Form action temporarily set to # -->
-    <form action="#" method="POST">
+    <form action="/submit-consent" method="POST">
+        @csrf
         
-        <!-- Privacy Policy Text Area (PBI-08) -->
         <div class="consent-text">
             <p><strong>MindLink Counseling Services Agreement</strong></p>
             <p>By proceeding with this service, you acknowledge and agree to the following terms:</p>
@@ -93,13 +92,16 @@
             <p><em>Please ensure you have read and understood all the terms outlined above before proceeding to schedule an appointment.</em></p>
         </div>
 
-        <!-- Checkbox (PBI-06) -->
         <div class="checkbox-group">
-            <input type="checkbox" id="agreed" name="agreed" value="1" required>
+            <input type="checkbox" id="agreed" name="is_agreed" value="1" required>
             <label for="agreed">I have read and fully agree to the informed consent.</label>
         </div>
 
         <button type="submit" class="btn-submit">Continue</button>
+
+        @if(session('success'))
+            <p style="color: green; margin-top: 15px; text-align: center; font-weight: 600;">{{ session('success') }}</p>
+        @endif
     </form>
 </div>
 
