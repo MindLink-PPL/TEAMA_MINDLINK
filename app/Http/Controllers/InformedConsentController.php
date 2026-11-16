@@ -15,8 +15,14 @@ class InformedConsentController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'is_agreed' => 'accepted',
+        ], [
+            'is_agreed.accepted' => 'You must read and agree to the data usage terms before proceeding.',
+        ]);
+
         $consent = new InformedConsent();
-        $consent->is_agreed = $request->has('is_agreed') ? true : false;
+        $consent->is_agreed = true;
         $consent->agreed_at = now();
         $consent->save();
 
