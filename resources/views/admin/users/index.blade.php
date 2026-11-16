@@ -205,8 +205,8 @@
                                             @method('PATCH')
                                             <select
                                                 name="role_id"
+                                                dusk="role-select-{{ $user->id }}"
                                                 class="text-xs py-1.5 px-2.5 border border-slate-200 rounded-lg focus:ring-[#0d9488] focus:border-[#0d9488] bg-white transition"
-                                                onchange="if(confirm('Change role for {{ addslashes($user->name) }} to ' + this.options[this.selectedIndex].text + '? This immediately updates their granted permissions.')) { this.form.submit(); } else { this.value = '{{ $user->role_id }}'; }"
                                             >
                                                 @foreach ($roles as $r)
                                                     <option value="{{ $r->id }}" {{ $user->role_id == $r->id ? 'selected' : '' }}>
@@ -216,6 +216,7 @@
                                             </select>
                                             <button
                                                 type="submit"
+                                                dusk="update-role-{{ $user->id }}"
                                                 class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-slate-100 hover:bg-[#0d9488] hover:text-white text-slate-700 transition border border-slate-200 hover:border-[#0d9488]"
                                             >
                                                 Update
