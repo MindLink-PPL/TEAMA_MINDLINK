@@ -73,6 +73,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the support referrals recorded for this student.
+     */
+    public function studentReferrals(): HasMany
+    {
+        return $this->hasMany(StudentReferral::class, 'user_id');
+    }
+
+    /**
      * Check if the user has a specific role or one of given roles.
      */
     public function hasRole(string|array $roles): bool
@@ -90,6 +98,10 @@ class User extends Authenticatable
             }
 
             if (in_array($role, ['student', 'user'], true) && in_array($userSlug, ['student', 'user'], true)) {
+                return true;
+            }
+
+            if (in_array($role, ['counsellor', 'manager'], true) && in_array($userSlug, ['counsellor', 'manager'], true)) {
                 return true;
             }
         }

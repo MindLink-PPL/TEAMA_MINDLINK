@@ -85,6 +85,22 @@ class UserFactory extends Factory
     }
 
     /**
+     * Set the user's role to counsellor.
+     */
+    public function counsellor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role_id' => Role::firstOrCreate(
+                ['slug' => 'counsellor'],
+                [
+                    'name' => 'Counsellor',
+                    'description' => 'As a counsellor, I want to access counselling functions and authorised student information so that I can provide appropriate support.',
+                ]
+            )->id,
+        ]);
+    }
+
+    /**
      * Set the user's role to student.
      */
     public function student(): static

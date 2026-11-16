@@ -180,96 +180,279 @@
         <!-- ========================================== -->
         <!-- PG-05: COUNSELLOR WORKSPACE (Figma Match)  -->
         <!-- ========================================== -->
-        <div class="space-y-6">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Today's workload</h2>
-                <p class="text-sm text-slate-500 mt-0.5">Prioritise requests and document sessions within the authorised workspace.</p>
+        @php
+            $queueList = isset($counsellorQueue) && count($counsellorQueue) > 0
+                ? collect($counsellorQueue)->values()->all()
+                : [
+                    [
+                        'id' => null,
+                        'code' => 'ST-204',
+                        'concern' => 'Persistent anxiety',
+                        'submitted_label' => 'Persistent anxiety • submitted 09:12',
+                        'priority' => 'High priority',
+                        'status' => 'Confirmed',
+                        'scheduled_date' => 'Wednesday, 21 October 2026',
+                        'scheduled_time' => '10:00',
+                        'session_mode' => 'In person',
+                        'header_title' => 'ST-204 • Appointment 10:00',
+                        'student_name' => 'Alex Rivera (Student)',
+                        'student_email' => 'student@mindlink.com',
+                        'student_notes' => 'Persistent anxious thoughts affecting sleep and lecture attendance.',
+                        'consent_verified' => true,
+                        'consent_date' => '13 Oct 2026',
+                        'wellbeing_score' => 21,
+                        'wellbeing_mood' => 'Low',
+                        'wellbeing_guidance' => 'High wellbeing reflection score; priority counselling recommended.',
+                        'session_note' => '',
+                        'note_status' => 'draft',
+                        'support_action' => 'Priority Clinical Intake & Anxiety Support',
+                        'notified' => false,
+                    ],
+                    [
+                        'id' => null,
+                        'code' => 'ST-187',
+                        'concern' => 'Study pressure',
+                        'submitted_label' => 'Study pressure • appointment 10:00',
+                        'priority' => 'Scheduled',
+                        'status' => 'Confirmed',
+                        'scheduled_date' => 'Wednesday, 21 October 2026',
+                        'scheduled_time' => '10:00',
+                        'session_mode' => 'In person',
+                        'header_title' => 'ST-187 • Appointment 10:00',
+                        'student_name' => 'Student',
+                        'student_email' => 'student@gmail.com',
+                        'student_notes' => 'Experiencing difficulty concentrating ahead of mid-semester deadlines.',
+                        'consent_verified' => true,
+                        'consent_date' => '13 Oct 2026',
+                        'wellbeing_score' => 14,
+                        'wellbeing_mood' => 'Okay',
+                        'wellbeing_guidance' => 'Moderate study pressure over the past two weeks.',
+                        'session_note' => '',
+                        'note_status' => 'draft',
+                        'support_action' => 'Structured Study & Grounding Plan',
+                        'notified' => false,
+                    ],
+                    [
+                        'id' => null,
+                        'code' => 'ST-221',
+                        'concern' => 'Sleep difficulty',
+                        'submitted_label' => 'Sleep difficulty • submitted yesterday',
+                        'priority' => 'New',
+                        'status' => 'Pending review',
+                        'scheduled_date' => 'Thursday, 22 October 2026',
+                        'scheduled_time' => '13:30',
+                        'session_mode' => 'Online',
+                        'header_title' => 'ST-221 • Appointment 13:30',
+                        'student_name' => 'John Doe (Student)',
+                        'student_email' => 'john@mindlink.com',
+                        'student_notes' => 'Difficulty falling asleep before 2am on weeknights.',
+                        'consent_verified' => true,
+                        'consent_date' => '20 Oct 2026',
+                        'wellbeing_score' => 11,
+                        'wellbeing_mood' => 'Okay',
+                        'wellbeing_guidance' => 'Sleep routine guidance and consultation requested.',
+                        'session_note' => '',
+                        'note_status' => 'none',
+                        'support_action' => 'Sleep Hygiene & Routine Consultation',
+                        'notified' => false,
+                    ],
+                    [
+                        'id' => null,
+                        'code' => 'ST-163',
+                        'concern' => 'Follow-up requested by student',
+                        'submitted_label' => 'Follow-up requested by student',
+                        'priority' => 'Follow-up',
+                        'status' => 'Confirmed',
+                        'scheduled_date' => 'Wednesday, 21 October 2026',
+                        'scheduled_time' => '15:00',
+                        'session_mode' => 'In person',
+                        'header_title' => 'ST-163 • Appointment 15:00',
+                        'student_name' => 'Alex Rivera (Student)',
+                        'student_email' => 'student@mindlink.com',
+                        'student_notes' => 'Checking in on progress with the weekly workload boundary plan.',
+                        'consent_verified' => true,
+                        'consent_date' => '11 Oct 2026',
+                        'wellbeing_score' => 21,
+                        'wellbeing_mood' => 'Low',
+                        'wellbeing_guidance' => 'Follow-up requested to evaluate academic pacing.',
+                        'session_note' => '',
+                        'note_status' => 'draft',
+                        'support_action' => 'Follow-Up Wellbeing Review',
+                        'notified' => false,
+                    ],
+                ];
+        @endphp
+
+        <div
+            class="space-y-6"
+            x-data="{
+                queue: {{ \Illuminate\Support\Js::from($queueList) }},
+                selectedCode: 'ST-187',
+                get selectedItem() {
+                    return this.queue.find(i => i.code === this.selectedCode) || this.queue[1] || this.queue[0];
+                }
+            }"
+        >
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                    <h2 class="text-2xl font-bold text-[#0f2a4a] tracking-tight">Today's workload</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">Prioritise requests and document sessions within the authorised workspace.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('counsellor.requests') }}" class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-[#0f2a4a] hover:bg-slate-50 transition shadow-2xs">
+                        Manage Requests
+                    </a>
+                    <a href="{{ route('counsellor.records') }}" class="px-3.5 py-2 rounded-xl bg-[#1c9c8c] text-white text-xs font-bold hover:bg-[#157a6e] transition shadow-2xs">
+                        Authorised Student Info &rarr;
+                    </a>
+                </div>
             </div>
 
-            <!-- Metric Cards -->
+            <!-- Metric Cards (PG-05 Exact Match) -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div class="p-6 rounded-2xl bg-[#fef4ea] border border-[#fed7aa] shadow-2xs">
+                <a href="{{ route('counsellor.requests') }}" class="p-6 rounded-2xl bg-[#fff3e6] border border-[#fde2c8] shadow-2xs hover:shadow-sm transition block">
                     <div class="text-xs font-medium text-slate-600">Pending requests</div>
-                    <div class="text-4xl font-extrabold text-[#ea580c] mt-2">7</div>
-                    <div class="text-xs text-[#9a3412] mt-4">2 marked high priority</div>
-                </div>
+                    <div class="text-4xl font-extrabold text-[#f58a42] mt-2">{{ $pendingRequestsCount ?? 7 }}</div>
+                    <div class="text-xs text-slate-500 mt-4">{{ $highPriorityCount ?? 2 }} marked high priority</div>
+                </a>
 
-                <div class="p-6 rounded-2xl bg-[#ebf8f3] border border-[#bbf7d0] shadow-2xs">
+                <a href="{{ route('counsellor.schedule') }}" class="p-6 rounded-2xl bg-[#e6f5f0] border border-[#cdece2] shadow-2xs hover:shadow-sm transition block">
                     <div class="text-xs font-medium text-slate-600">Today's sessions</div>
-                    <div class="text-4xl font-extrabold text-[#059669] mt-2">4</div>
+                    <div class="text-4xl font-extrabold text-[#1c9c8c] mt-2">{{ $todaysSessionsCount ?? 4 }}</div>
                     <div class="text-xs text-slate-500 mt-4">Next session at 10:00</div>
-                </div>
+                </a>
 
-                <div class="p-6 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                <a href="{{ route('counsellor.referrals') }}" class="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-sm transition block">
                     <div class="text-xs font-medium text-slate-600">Follow-ups due</div>
-                    <div class="text-4xl font-extrabold text-slate-900 mt-2">3</div>
+                    <div class="text-4xl font-extrabold text-[#0f2a4a] mt-2">{{ $followUpsDueCount ?? 3 }}</div>
                     <div class="text-xs text-slate-500 mt-4">Complete before 16:00</div>
-                </div>
+                </a>
             </div>
 
-            <!-- Workspace Columns -->
+            <!-- Workspace Columns (PG-05 Exact Match + Interactive Queue & Session Note Submission) -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Request Queue -->
-                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-base font-bold text-slate-900">Request queue</h3>
-                        <span class="text-xs font-medium text-[#0d9488]">Newest first</span>
+                <!-- Left: Request Queue -->
+                <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-base font-bold text-[#0f2a4a]">Request queue</h3>
+                            <a href="{{ route('counsellor.requests') }}" class="text-xs font-semibold text-[#1c9c8c] hover:underline">Newest first</a>
+                        </div>
+
+                        <div class="divide-y divide-slate-100">
+                            @foreach ($queueList as $item)
+                                @php
+                                    $badgeStyle = match ($item['priority']) {
+                                        'High priority' => 'bg-[#fff3e6] text-[#f58a42]',
+                                        'Scheduled', 'Follow-up', 'Completed' => 'bg-[#e6f5f0] text-[#1c9c8c]',
+                                        default => 'bg-[#f1f5f9] text-slate-600',
+                                    };
+                                @endphp
+                                <div
+                                    dusk="queue-item-{{ $item['code'] }}"
+                                    @click="selectedCode = '{{ $item['code'] }}'"
+                                    :class="selectedCode === '{{ $item['code'] }}' ? 'bg-[#f8fafc] -mx-3 px-3 rounded-xl ring-1 ring-[#1c9c8c]/30' : 'hover:bg-slate-50/70 -mx-3 px-3 rounded-xl'"
+                                    class="py-3.5 flex items-center justify-between cursor-pointer transition"
+                                >
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-sm text-[#0f2a4a]">{{ $item['code'] }}</span>
+                                            <span class="text-[11px] font-medium text-slate-400">&bull; {{ $item['student_name'] }}</span>
+                                        </div>
+                                        <div class="text-xs text-slate-500 mt-0.5">{{ $item['submitted_label'] }}</div>
+                                    </div>
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full {{ $badgeStyle }}">
+                                        {{ $item['priority'] }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
 
-                    <div class="divide-y divide-slate-100">
-                        <div class="py-3.5 flex items-center justify-between">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900">ST-204</div>
-                                <div class="text-xs text-slate-500">Persistent anxiety &bull; submitted 09:12</div>
-                            </div>
-                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-[#fef4ea] text-[#ea580c]">High priority</span>
-                        </div>
-
-                        <div class="py-3.5 flex items-center justify-between">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900">ST-187</div>
-                                <div class="text-xs text-slate-500">Study pressure &bull; appointment 10:00</div>
-                            </div>
-                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-[#ecfdf5] text-[#059669]">Scheduled</span>
-                        </div>
-
-                        <div class="py-3.5 flex items-center justify-between">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900">ST-221</div>
-                                <div class="text-xs text-slate-500">Sleep difficulty &bull; submitted yesterday</div>
-                            </div>
-                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-600">New</span>
-                        </div>
-
-                        <div class="py-3.5 flex items-center justify-between">
-                            <div>
-                                <div class="font-bold text-sm text-slate-900">ST-163</div>
-                                <div class="text-xs text-slate-500">Follow-up requested by student</div>
-                            </div>
-                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-[#ecfdf5] text-[#059669]">Follow-up</span>
-                        </div>
+                    <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                        <span>Click any student request above to inspect authorised information and record session notes.</span>
+                        <a href="{{ route('counsellor.requests') }}" class="font-bold text-[#1c9c8c] hover:underline shrink-0 ml-2">Full queue &rarr;</a>
                     </div>
                 </div>
 
-                <!-- Session Note Form -->
-                <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
-                    <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#fef4ea] text-[#ea580c] mb-2">
-                        Authorised counsellor only
-                    </span>
-                    <h4 class="font-bold text-base text-slate-900">ST-187 &bull; Appointment 10:00</h4>
-                    <p class="text-xs text-slate-500 mt-1 mb-4">Private notes are visible only to assigned counselling staff.</p>
+                <!-- Right: Session Note & Authorised Student Information Form -->
+                <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs flex flex-col justify-between">
+                    <form method="POST" action="{{ route('counsellor.notes.store') }}">
+                        @csrf
+                        <input type="hidden" name="counselling_request_id" :value="selectedItem.id">
+                        <input type="hidden" name="student_code" :value="selectedItem.code" value="ST-187">
 
-                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Session note</label>
-                    <textarea rows="4" placeholder="Document observations and agreed next steps..." class="w-full text-xs rounded-xl border-slate-200 bg-[#f8fafc] focus:ring-[#0d9488] focus:border-[#0d9488] p-3"></textarea>
+                        <span class="inline-block px-3 py-1 rounded-full text-[11px] font-semibold bg-[#fff3e6] text-[#f58a42] mb-2.5">
+                            Authorised counsellor only
+                        </span>
 
-                    <div class="mt-4 flex items-center gap-2">
-                        <button type="button" class="flex-1 py-2 px-3 border border-[#0d9488] text-[#0d9488] font-bold text-xs rounded-xl hover:bg-teal-50 transition">
-                            Save draft
-                        </button>
-                        <button type="button" class="flex-1 py-2 px-3 bg-[#0d9488] text-white font-bold text-xs rounded-xl hover:bg-[#0f766e] transition">
-                            Complete and notify
-                        </button>
-                    </div>
+                        <h4 class="font-bold text-base text-[#0f2a4a]" x-text="selectedItem.header_title">
+                            ST-187 &bull; Appointment 10:00
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-1 mb-4">
+                            Private notes are visible only to assigned counselling staff.
+                        </p>
+
+                        <!-- Authorised Student Information Summary Box -->
+                        <div class="mb-4 p-3.5 rounded-xl bg-[#f8fafc] border border-slate-200/80 space-y-1.5 text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-[#0f2a4a]" x-text="selectedItem.student_name">Student</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
+                                    Consent verified
+                                </span>
+                            </div>
+                            <div class="text-slate-600 flex items-center justify-between">
+                                <span>Wellbeing reflection: <strong class="text-[#0f2a4a]" x-text="selectedItem.wellbeing_score + '/30'">14/30</strong></span>
+                                <span>Mood: <strong class="text-[#0f2a4a]" x-text="selectedItem.wellbeing_mood">Okay</strong></span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-200/70" x-text="selectedItem.student_notes">
+                                Experiencing difficulty concentrating ahead of mid-semester deadlines.
+                            </div>
+                        </div>
+
+                        <!-- Appropriate Support Action -->
+                        <div class="mb-3">
+                            <label for="workspace_support_action" class="block text-xs font-medium text-slate-700 mb-1">Support plan</label>
+                            <input
+                                id="workspace_support_action"
+                                type="text"
+                                name="support_action"
+                                :value="selectedItem.support_action"
+                                value="Structured Study & Grounding Plan"
+                                class="w-full text-xs rounded-xl border border-slate-200 bg-[#f8fafc] text-[#0f2a4a] font-medium px-3 py-2 focus:ring-[#1c9c8c] focus:border-[#1c9c8c]"
+                            >
+                        </div>
+
+                        <label for="workspace_session_note" class="block text-xs font-medium text-slate-700 mb-1.5">Session note</label>
+                        <textarea
+                            id="workspace_session_note"
+                            name="session_note"
+                            rows="4"
+                            :value="selectedItem.session_note"
+                            placeholder="Document observations and agreed next steps..."
+                            class="w-full text-xs rounded-xl border border-slate-200 bg-[#f1f5f9] focus:bg-white focus:ring-[#1c9c8c] focus:border-[#1c9c8c] p-3 text-slate-700"
+                            required
+                        ></textarea>
+
+                        <div class="mt-4 flex items-center gap-2.5">
+                            <button
+                                type="submit"
+                                name="action_type"
+                                value="draft"
+                                class="flex-1 py-2.5 px-3 border border-[#1c9c8c] text-[#1c9c8c] font-bold text-xs rounded-xl hover:bg-[#e6f5f0]/50 transition"
+                            >
+                                Save draft
+                            </button>
+                            <button
+                                type="submit"
+                                name="action_type"
+                                value="complete"
+                                class="flex-1 py-2.5 px-3 bg-[#1c9c8c] text-white font-bold text-xs rounded-xl hover:bg-[#157a6e] transition shadow-2xs"
+                            >
+                                Complete and notify
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -405,6 +588,7 @@
                             <!-- Great -->
                             <button
                                 type="button"
+                                dusk="mood-great"
                                 @click="selectedMood = 'Great'"
                                 class="flex flex-col items-center group focus:outline-none"
                             >

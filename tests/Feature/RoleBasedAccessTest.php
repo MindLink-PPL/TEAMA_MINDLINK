@@ -312,9 +312,174 @@ class RoleBasedAccessTest extends TestCase
         ]);
     }
 
+    public function test_student_can_access_notifications_page_and_view_appointment_updates(): void
+    {
+        $testStudent = User::where('email', 'student@gmail.com')->first();
+
+        $response = $this->actingAs($testStudent)->get(route('student.notifications'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Notifications');
+        $response->assertSee('Private updates');
+        $response->assertSee('Session with Alisa');
+    }
+
     public function test_non_student_roles_cannot_access_student_specific_routes(): void
     {
         $this->actingAs($this->adminUser)->get(route('student.wellbeing'))->assertStatus(403);
         $this->actingAs($this->counsellorUser)->get(route('student.counselling'))->assertStatus(403);
+    }
+
+    public function test_default_counsellor_account_is_seeded_and_can_log_in(): void
+    {
+        $testCounsellor = User::where('email', 'counsellor@gmail.com')->first();
+
+        $this->assertNotNull($testCounsellor);
+        $this->assertEquals('Counsellor', $testCounsellor->name);
+        $this->assertTrue($testCounsellor->isCounsellor());
+
+        $response = $this->post('/login', [
+            'email' => 'counsellor@gmail.com',
+            'password' => '12345',
+        ]);
+
+        $this->assertAuthenticatedAs($testCounsellor);
+        $response->assertRedirect(route('dashboard', absolute: false));
+    }
+
+    public function test_counsellor_role_has_jira_description_and_counsellor_permissions(): void
+    {
+        $this->assertEquals('Counsellor', $this->counsellorRole->name);
+        $this->assertEquals(
+            'As a counsellor, I want to access counselling functions and authorised student information so that I can provide appropriate support.',
+            $this->counsellorRole->description
+        );
+        $this->assertTrue($this->counsellorUser->isCounsellor());
+        $this->assertTrue($this->counsellorUser->hasRole('counsellor'));
+        $this->assertTrue($this->counsellorUser->hasPermission('counsellor.workspace'));
+        $this->assertTrue($this->counsellorUser->hasPermission('counselling.requests.manage'));
+        $this->assertTrue($this->counsellorUser->hasPermission('counselling.students.view'));
+        $this->assertTrue($this->counsellorUser->hasPermission('counselling.notes.manage'));
+        $this->assertTrue($this->counsellorUser->hasPermission('counselling.referrals.manage'));
+    }
+
+    public function test_counsellor_can_access_request_queue_and_update_student_support_plan(): void
+    {
+        $response = $this->actingAs($this->counsellorUser)->get(route('counsellor.requests'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Counselling Requests');
+        $response->assertSee('ST-204');
+        $response->assertSee('ST-187');
+        $response->assertSee('ST-221');
+        $response->assertSee('ST-163');
+        $response->assertSee('Authorised Student Info');
+
+        $requestItem = \App\Models\CounsellingRequest::where('student_code', 'ST-221')->firstOrFail();
+
+        $updateResponse = $this->actingAs($this->counsellorUser)->patch(
+            route('counsellor.requests.update', $requestItem),
+            [
+                'priority' => 'Scheduled',
+                'scheduled_time' => '15:00',
+                'session_mode' => 'In person',
+                'support_action' => 'Sleep Hygiene & Routine Consultation',
+            ]
+        );
+
+        $updateResponse->assertRedirect();
+        $updateResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('counselling_requests', [
+            'id' => $requestItem->id,
+            'priority' => 'Scheduled',
+            'scheduled_time' => '15:00',
+            'support_action' => 'Sleep Hygiene & Routine Consultation',
+        ]);
+    }
+
+    public function test_counsellor_can_save_draft_and_complete_session_notes_to_support_student(): void
+    {
+        $request187 = \App\Models\CounsellingRequest::where('student_code', 'ST-187')->firstOrFail();
+
+        // 1. Save draft note
+        $draftResponse = $this->actingAs($this->counsellorUser)->post(route('counsellor.notes.store'), [
+            'counselling_request_id' => $request187->id,
+            'student_code' => 'ST-187',
+            'session_note' => 'Draft observation: student is responding well to 25-minute study blocks.',
+            'support_action' => 'Structured Study & Grounding Plan',
+            'action_type' => 'draft',
+        ]);
+
+        $draftResponse->assertRedirect();
+        $draftResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('counselling_requests', [
+            'id' => $request187->id,
+            'note_status' => 'draft',
+            'session_note' => 'Draft observation: student is responding well to 25-minute study blocks.',
+        ]);
+
+        // 2. Complete session note and notify student
+        $completeResponse = $this->actingAs($this->counsellorUser)->post(route('counsellor.notes.store'), [
+            'counselling_request_id' => $request187->id,
+            'student_code' => 'ST-187',
+            'session_note' => 'Completed session: agreed on weekly check-in and exam pacing strategy.',
+            'support_action' => 'Weekly Pacing & Exam Anxiety Support',
+            'action_type' => 'complete',
+        ]);
+
+        $completeResponse->assertRedirect();
+        $completeResponse->assertSessionHas('success');
+        $this->assertDatabaseHas('counselling_requests', [
+            'id' => $request187->id,
+            'note_status' => 'completed',
+            'status' => 'Completed & Notified',
+            'support_action' => 'Weekly Pacing & Exam Anxiety Support',
+        ]);
+    }
+
+    public function test_counsellor_can_access_authorised_student_records_schedule_and_referrals(): void
+    {
+        // Schedule page
+        $scheduleResp = $this->actingAs($this->counsellorUser)->get(route('counsellor.schedule'));
+        $scheduleResp->assertStatus(200);
+        $scheduleResp->assertSee('Counsellor Schedule');
+        $scheduleResp->assertSee('ST-187');
+
+        // Authorised Student Records page
+        $recordsResp = $this->actingAs($this->counsellorUser)->get(route('counsellor.records'));
+        $recordsResp->assertStatus(200);
+        $recordsResp->assertSee('Authorised Student Records');
+        $recordsResp->assertSee('Informed consent verified');
+        $recordsResp->assertSee('Alex Rivera (Student)');
+        $recordsResp->assertSee('21/30');
+
+        // Referrals page & creating a new support referral
+        $referralsResp = $this->actingAs($this->counsellorUser)->get(route('counsellor.referrals'));
+        $referralsResp->assertStatus(200);
+        $referralsResp->assertSee('Student support referrals');
+
+        $createRefResp = $this->actingAs($this->counsellorUser)->post(route('counsellor.referrals.store'), [
+            'user_id' => $this->standardUser->id,
+            'referral_type' => 'Sleep & Wellbeing Clinic',
+            'urgency' => 'High priority',
+            'reason' => 'Authorised wellbeing score indicates elevated academic and sleep stress.',
+            'support_plan' => 'Arrange specialist sleep consultation and follow-up next week.',
+        ]);
+
+        $createRefResp->assertRedirect(route('counsellor.referrals'));
+        $createRefResp->assertSessionHas('success');
+        $this->assertDatabaseHas('student_referrals', [
+            'user_id' => $this->standardUser->id,
+            'referral_type' => 'Sleep & Wellbeing Clinic',
+            'urgency' => 'High priority',
+        ]);
+    }
+
+    public function test_non_counsellor_roles_cannot_access_counsellor_specific_routes(): void
+    {
+        $this->actingAs($this->adminUser)->get(route('counsellor.requests'))->assertStatus(403);
+        $this->actingAs($this->adminUser)->get(route('counsellor.records'))->assertStatus(403);
+        $this->actingAs($this->standardUser)->get(route('counsellor.requests'))->assertStatus(403);
+        $this->actingAs($this->standardUser)->get(route('counsellor.records'))->assertStatus(403);
     }
 }

@@ -6,7 +6,7 @@
     </x-slot>
 
     @php
-        $questionsJson = collect($questions)->values()->toJson();
+        $questionsList = collect($questions)->values()->all();
     @endphp
 
     <div
@@ -14,7 +14,7 @@
         x-data="{
             currentStep: 6,
             totalSteps: 10,
-            questions: {{ $questionsJson }},
+            questions: {{ \Illuminate\Support\Js::from($questionsList) }},
             answers: {
                 1: 1,
                 2: 1,

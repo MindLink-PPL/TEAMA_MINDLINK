@@ -99,41 +99,53 @@
                     <!-- Counsellor Navigation (Matching PG-05) -->
                     <a
                         href="{{ route('dashboard') }}"
-                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('dashboard') ? 'bg-[#1b3d66] text-white shadow-sm' : 'text-slate-300 hover:bg-[#153457] hover:text-white' }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('dashboard', 'counsellor.workspace*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
                     >
-                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#14b8a6] text-white">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             W
                         </div>
                         <span>Workspace</span>
                     </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('counsellor.requests') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('counsellor.requests*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             R
                         </div>
                         <span>Requests</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('counsellor.schedule') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('counsellor.schedule*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             S
                         </div>
                         <span>Schedule</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('counsellor.records') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('counsellor.records*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             N
                         </div>
                         <span>Records</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('counsellor.referrals') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('counsellor.referrals*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#1c9c8c] text-white">
                             F
                         </div>
                         <span>Referrals</span>
-                    </div>
+                    </a>
 
                 @else
                     <!-- Student Navigation (Matching PG-01 / PG-02 / PG-03 / PG-04) -->
@@ -198,7 +210,7 @@
                     class="w-full p-2.5 rounded-xl bg-[#143355] hover:bg-[#1b3d66] border border-[#1f4773] transition flex items-center justify-between text-left group"
                 >
                     <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-9 h-9 rounded-full {{ $isAdmin ? 'bg-[#ea580c]' : ($isCounsellor ? 'bg-[#0d9488]' : 'bg-[#f97316]') }} text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
+                        <div class="w-9 h-9 rounded-full bg-[#f58a42] text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-sm">
                             {{ $isAdmin ? 'A' : ($isCounsellor ? 'C' : 'S') }}
                         </div>
                         <div class="min-w-0">

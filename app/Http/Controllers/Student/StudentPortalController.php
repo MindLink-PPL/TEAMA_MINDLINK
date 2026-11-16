@@ -284,8 +284,13 @@ class StudentPortalController extends Controller
             'consent' => ['nullable', 'boolean'],
         ]);
 
+        $existingCode = CounsellingRequest::where('user_id', $request->user()->id)
+            ->whereNotNull('student_code')
+            ->value('student_code');
+
         CounsellingRequest::create([
             'user_id' => $request->user()->id,
+            'student_code' => $existingCode ?: ('ST-' . (200 + $request->user()->id)),
             'counsellor_name' => $validated['counsellor_name'],
             'concern' => $validated['concern'],
             'notes' => $validated['notes'] ?? null,
@@ -294,6 +299,8 @@ class StudentPortalController extends Controller
             'scheduled_time' => $validated['scheduled_time'],
             'session_mode' => $validated['session_mode'] ?? 'In person',
             'status' => 'Confirmed',
+            'priority' => 'Scheduled',
+            'submitted_label' => "{$validated['concern']} • appointment {$validated['scheduled_time']}",
         ]);
 
         return redirect()

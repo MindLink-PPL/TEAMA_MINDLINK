@@ -26,6 +26,11 @@
                         <p class="text-xs text-slate-500 mt-0.5">
                             Scheduled for {{ $appt->scheduled_date }} at {{ $appt->scheduled_time }} ({{ $appt->session_mode }})
                         </p>
+                        @if ($appt->support_action)
+                            <p class="text-xs text-[#0f2a4a] font-medium mt-1">
+                                Support plan: {{ $appt->support_action }}
+                            </p>
+                        @endif
                     </div>
                     <a href="{{ route('student.counselling') }}" class="text-xs font-bold text-[#1c9c8c] hover:underline shrink-0">
                         View schedule &rarr;
@@ -42,4 +47,3 @@
         </div>
     </div>
 </x-app-layout>
-

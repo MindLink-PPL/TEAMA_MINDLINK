@@ -82,7 +82,8 @@
                         <span>{{ $article['read_time'] }}</span>
                         <button
                             type="button"
-                            @click="activeArticle = {{ json_encode($article) }}"
+                            dusk="read-article-{{ $article['id'] }}"
+                            @click="activeArticle = {{ \Illuminate\Support\Js::from($article) }}"
                             class="inline-flex items-center gap-1 text-[#0f2a4a] hover:text-[#1c9c8c] transition cursor-pointer"
                         >
                             <span>Read article</span>
