@@ -89,7 +89,7 @@
                 <img src="{{ asset('images/icons/calender-plus.png') }}" alt="Book Consultation" class="w-6 h-6 object-contain brightness-0 invert">
             </a>
 
-            <a href="#" class="inline-flex items-center gap-3 bg-[#f3d37a] hover:bg-[#e9c46a] text-[#12263a] px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
+            <a href="{{ route('quiz.history') }} " class="inline-flex items-center gap-3 bg-[#f3d37a] hover:bg-[#e9c46a] text-[#12263a] px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
                 <span class="leading-tight text-left">View your<br>previous quiz/test<br>result list</span>
                 <img src="{{ asset('images/icons/rotate-cw-fading-clock.png') }}" alt="History List" class="w-6 h-6 object-contain">
             </a>

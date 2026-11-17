@@ -12,6 +12,7 @@ Route::get('/', function () {
 Route::prefix('wellbeing')->name('quiz.')->group(function () {
     Route::get('/', [QuestionnaireController::class, 'index'])->name('index');
     Route::get('/results/{id}', [QuestionnaireController::class, 'result'])->name('result');
+    Route::get('/history', [QuestionnaireController::class, 'history'])->name('history');
     Route::get('/{id}', [QuestionnaireController::class, 'show'])->name('show');
     Route::post('/{id}/submit', [QuestionnaireController::class, 'store'])->name('store');
 });

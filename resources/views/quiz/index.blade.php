@@ -55,7 +55,7 @@
                     </div>
                 </div>
                 <div class="px-2 mt-8 mb-1">
-                    <a href="#" class="inline-flex items-center justify-between w-44 bg-[#2a9d8f] hover:bg-[#23877b] text-white py-2.5 px-4 rounded-md text-left font-bold text-xs uppercase tracking-wide transition shadow-sm">
+                    <a href="{{ route('quiz.history') }} " class="inline-flex items-center justify-between w-44 bg-[#2a9d8f] hover:bg-[#23877b] text-white py-2.5 px-4 rounded-md text-left font-bold text-xs uppercase tracking-wide transition shadow-sm">
                         <span class="leading-tight">VIEW<br>COMPLETED<br>QUIZ/TEST</span>
                         <span class="text-base font-bold">&gt;</span>
                     </a>

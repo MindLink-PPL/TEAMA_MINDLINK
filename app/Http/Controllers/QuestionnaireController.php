@@ -88,4 +88,16 @@ class QuestionnaireController extends Controller
         return view('quiz.result', compact('result', 'maxScore'));
     }
 
+    public function history()
+    {
+        $userId = Auth::id() ?? 1;
+
+        $pastResults = Quiz_Student_Result::with('quiz')
+            ->where('user_id', $userId)
+            ->latest()
+            ->get();
+
+        return view('quiz.history', compact('pastResults'));
+    }
+
 }
