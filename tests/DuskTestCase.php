@@ -5,6 +5,7 @@ namespace Tests;
 use Facebook\WebDriver\Chrome\ChromeOptions;
 use Facebook\WebDriver\Remote\DesiredCapabilities;
 use Facebook\WebDriver\Remote\RemoteWebDriver;
+use Facebook\WebDriver\Remote\WebDriverCapabilityType;
 use Illuminate\Support\Collection;
 use Laravel\Dusk\TestCase as BaseTestCase;
 use PHPUnit\Framework\Attributes\BeforeClass;
@@ -31,19 +32,44 @@ abstract class DuskTestCase extends BaseTestCase
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
             '--disable-search-engine-choice-screen',
             '--disable-smooth-scrolling',
+            '--no-sandbox',
+            '--disable-gpu',
         ])->unless($this->hasHeadlessDisabled(), function (Collection $items) {
             return $items->merge([
-                '--disable-gpu',
                 '--headless=new',
             ]);
         })->all());
 
-        return RemoteWebDriver::create(
-            $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? 'http://localhost:9515',
-            DesiredCapabilities::chrome()->setCapability(
-                ChromeOptions::CAPABILITY, $options
-            )
-        );
+        $driverUrl = $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? 'http://127.0.0.1:9515';
+
+        // Allow teammates using ChromeDriver to set DUSK_BROWSER=chrome in their .env
+        if (env('DUSK_BROWSER', 'edge') === 'chrome') {
+            return RemoteWebDriver::create(
+                $driverUrl,
+                DesiredCapabilities::chrome()->setCapability(
+                    ChromeOptions::CAPABILITY,
+                    $options
+                )
+            );
+        }
+
+        // Default to Microsoft Edge on Windows
+        $edgeBinary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+        if (file_exists($edgeBinary)) {
+            $options->setBinary($edgeBinary);
+        } else {
+            $edgeBinary64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
+            if (file_exists($edgeBinary64)) {
+                $options->setBinary($edgeBinary64);
+            }
+        }
+
+        $capabilities = new DesiredCapabilities([
+            WebDriverCapabilityType::BROWSER_NAME => 'MicrosoftEdge',
+            'ms:edgeOptions' => $options->toArray(),
+        ]);
+
+        return RemoteWebDriver::create($driverUrl, $capabilities);
     }
 
     /**
@@ -51,7 +77,7 @@ abstract class DuskTestCase extends BaseTestCase
      */
     protected function baseUrl(): string
     {
-        if (!empty($_ENV['DUSK_START_URL'])) {
+        if (! empty($_ENV['DUSK_START_URL'])) {
             return rtrim($_ENV['DUSK_START_URL'], '/');
         }
 
