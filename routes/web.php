@@ -5,15 +5,27 @@ use App\Http\Controllers\Counsellor\CounsellorPortalController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Student\StudentPortalController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InformedConsentController;
 
 Route::get('/', function () {
     return response()->file(base_path('index.html'));
 });
 
+// Informed Consent
+Route::get('/test-consent', function () {
+    return view('consent');
+});
+
+Route::post('/submit-consent', [InformedConsentController::class, 'store']);
+Route::get('/admin/consents', [InformedConsentController::class, 'index']);
+
+//
 Route::get('/{any}', function () {
     return response()->file(base_path('index.html'));
 })->where('any', '.*');
 
+
+// Role Based Access
 Route::get('/dashboard', function () {
     $user = auth()->user()->load('role.permissions');
     $upcomingAppointment = null;
