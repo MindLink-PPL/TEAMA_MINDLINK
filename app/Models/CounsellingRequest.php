@@ -10,12 +10,17 @@ class CounsellingRequest extends Model
 {
     use HasFactory;
 
+    protected $table = 'counselling_requests';
+    protected $primaryKey = 'request_id';
+
     protected $fillable = [
         'user_id',
+        'student_id',
         'student_code',
         'counsellor_name',
         'counsellor_id',
         'concern',
+        'goals',
         'notes',
         'session_note',
         'note_status',
@@ -23,12 +28,16 @@ class CounsellingRequest extends Model
         'follow_up_due',
         'student_notified_at',
         'consent_accepted_at',
+        'appointment_date',
+        'appointment_time',
+        'appointment_mode',
         'scheduled_date',
         'scheduled_time',
         'session_mode',
         'status',
         'priority',
         'submitted_label',
+        'counsellor_notes',
     ];
 
     protected function casts(): array
@@ -65,6 +74,6 @@ class CounsellingRequest extends Model
             return $this->student_code;
         }
 
-        return 'ST-' . (180 + ($this->user_id ?? $this->id));
+        return 'ST-' . (180 + ($this->user_id ?? $this->request_id));
     }
 }

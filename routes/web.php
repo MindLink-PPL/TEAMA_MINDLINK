@@ -1,4 +1,6 @@
 <?php
+use App\Http\Controllers\CounsellorController;
+use App\Http\Controllers\CounsellingController;
 
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Counsellor\CounsellorPortalController;
@@ -11,6 +13,15 @@ Route::get('/', function () {
     return response()->file(base_path('index.html'));
 });
 
+// Counselling Request
+// counselling request student side
+Route::get('/counselling/request', [CounsellingController::class, 'create'])->name('counselling.request');
+Route::post('/counselling/request', [CounsellingController::class, 'store'])->name('counselling.store');
+
+// counsellor dashboard 
+Route::get('/counsellor/dashboard', [CounsellorController::class, 'index'])->name('counsellor.dashboard');
+Route::patch('/counsellor/requests/{id}/status', [CounsellorController::class, 'updateStatus'])->name('counsellor.updateStatus');
+//
 // Informed Consent
 Route::get('/test-consent', function () {
     return view('consent');

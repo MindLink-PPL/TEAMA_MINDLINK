@@ -18,6 +18,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+              CounsellorSeeder::class,
+          ]);
+      
         // 1. Create Roles
         $adminRole = Role::updateOrCreate(
             ['slug' => 'admin'],
