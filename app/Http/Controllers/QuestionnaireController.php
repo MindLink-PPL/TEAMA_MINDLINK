@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\Quiz_Catalog;
 use App\Models\Quiz_Options;
 use App\Models\Quiz_Student_Result;
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class QuestionnaireController extends Controller
 {
+    protected GeminiService $geminiService;
+
+    public function __construct(GeminiService $geminiService)
+    {
+        $this->geminiService = $geminiService;
+    }
+
     public function index()
     {
         $quizzes = Quiz_Catalog::withCount('questions')
@@ -42,11 +50,20 @@ class QuestionnaireController extends Controller
         ]);
 
         $selectedOptionIds = array_values($validated['answers']);
-        $totalScore = Quiz_Options::whereIn('id', $selectedOptionIds)->sum('points');
+        $selectedOptions = Quiz_Options::whereIn('id', $selectedOptionIds)->get()->keyBy('id');
+        $totalScore = $selectedOptions->sum('points');
 
         $maxScore = 0;
-        foreach ($quiz->questions as $question) {
+        $answeredBreakdown = [];
+
+        foreach ($quiz->questions as $index => $question) {
             $maxScore += $question->options->max('points') ?? 3;
+            $chosenOptionId = $validated['answers'][$question->id] ?? null;
+            $chosenOption = $selectedOptions->get($chosenOptionId);
+
+            if ($chosenOption) {
+                $answeredBreakdown[] = ($index + 1) . ". {$question->question_text} -> Answered: \"{$chosenOption->option_text}\" ({$chosenOption->points} pts)";
+            }
         }
 
         $percentage = $maxScore > 0 ? ($totalScore / $maxScore) * 100 : 0;
@@ -59,12 +76,20 @@ class QuestionnaireController extends Controller
             $distressLevel = 'High';
         }
 
+        $aiSummary = $this->geminiService->generateSummary(
+            $quiz->title,
+            $totalScore,
+            $maxScore,
+            $distressLevel,
+            $answeredBreakdown
+        );
+
         $result = Quiz_Student_Result::create([
             'user_id'        => Auth::id() ?? 1,
             'quiz_id'        => $quiz->id,
             'total_score'    => $totalScore,
             'distress_level' => $distressLevel,
-            'ai_summary'     => null,
+            'ai_summary'     => $aiSummary,
         ]);
 
         return redirect()->route('quiz.result', $result->id);
@@ -85,6 +110,19 @@ class QuestionnaireController extends Controller
             $maxScore += $question->options->max('points') ?? 3;
         }
 
+        // Only generate once if this legacy row had no ai_summary stored yet
+        if (empty($result->ai_summary)) {
+            $generated = $this->geminiService->generateSummary(
+                $result->quiz->title,
+                $result->total_score,
+                $maxScore,
+                $result->distress_level
+            );
+
+            $result->ai_summary = $generated;
+            $result->save();
+        }
+
         return view('quiz.result', compact('result', 'maxScore'));
     }
 
@@ -99,5 +137,4 @@ class QuestionnaireController extends Controller
 
         return view('quiz.history', compact('pastResults'));
     }
-
 }

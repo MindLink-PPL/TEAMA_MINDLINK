@@ -11,7 +11,7 @@
 @endphp
 
 <div class="max-w-5xl mx-auto">
-    <!-- Top Split Header Matching Figma -->
+    <!-- Top Split Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 text-sm text-[#12263a]">
         <div>
             <p class="font-semibold">
@@ -38,7 +38,7 @@
                 <h3 class="text-base font-bold border-b border-slate-500 pb-2 mb-3">AI Summary:</h3>
                 <div class="max-h-44 overflow-y-auto pr-2 text-xs leading-relaxed text-slate-100 space-y-2">
                     <p>
-                        {{ $result->ai_summary ?? 'Based on your responses to the ' . $result->quiz->title . ', your current score reflects a ' . strtolower($result->distress_level) . '[insert placeholder ai summary here]' }}
+                        {!! nl2br(e($result->ai_summary ?? 'Summary is currently unavailable.')) !!}
                     </p>
                 </div>
             </div>
@@ -86,10 +86,10 @@
         <div class="flex flex-wrap items-center gap-4">
             <a href="#" class="inline-flex items-center gap-3 bg-[#2a9d8f] hover:bg-[#23877b] text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
                 <span class="leading-tight text-left">Book a<br>consultation<br>session now!</span>
-                <img src="{{ asset('images/icons/calender-plus.png') }}" alt="Book Consultation" class="w-6 h-6 object-contain brightness-0 invert">
+                <img src="{{ asset('images/icons/calendar-plus.png') }}" alt="Book Consultation" class="w-6 h-6 object-contain brightness-0 invert">
             </a>
 
-            <a href="{{ route('quiz.history') }} " class="inline-flex items-center gap-3 bg-[#f3d37a] hover:bg-[#e9c46a] text-[#12263a] px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
+            <a href="{{ route('quiz.history') }}" class="inline-flex items-center gap-3 bg-[#f3d37a] hover:bg-[#e9c46a] text-[#12263a] px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
                 <span class="leading-tight text-left">View your<br>previous quiz/test<br>result list</span>
                 <img src="{{ asset('images/icons/rotate-cw-fading-clock.png') }}" alt="History List" class="w-6 h-6 object-contain">
             </a>

@@ -3,7 +3,7 @@
 @section('header_title', 'Wellbeing self check-in: Quiz Session')
 
 @section('content')
-<!-- STATE 1: Quiz Details Briefing View (Kept in your preferred layout) -->
+<!-- STATE 1: Quiz Details Briefing View -->
 <div id="briefingView" class="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8">
     <div class="mb-8 border-b pb-6">
         <span class="text-xs font-semibold text-teal-600 uppercase">Stress Handling</span>
@@ -36,7 +36,7 @@
     </div>
 </div>
 
-<!-- STATE 2: Step-by-Step Quiz Session View (Matches Figma Session Page) -->
+<!-- STATE 2: Step-by-Step Quiz Session View -->
 <div id="sessionView" class="hidden max-w-4xl mx-auto">
     <!-- Top Progress Header -->
     <div class="mb-8">
@@ -87,7 +87,7 @@
             </div>
             @endif
 
-            <!-- Card Footer Navigation Matching Figma -->
+            <!-- Card Footer Navigation -->
             <div class="flex justify-between items-center pt-4 border-t border-gray-100">
                 <div class="flex items-center gap-3">
                     <button type="button" id="prevBtn" class="px-5 py-1.5 bg-white border border-[#2a9d8f] text-[#2a9d8f] rounded-md text-xs font-semibold hover:bg-teal-50 hidden transition">
@@ -126,7 +126,9 @@
         <p class="text-sm text-gray-600 mt-2">Are you sure you want to finish the quiz, or would you like to go back to review your answers?</p>
         <div class="mt-6 flex justify-end space-x-3">
             <button type="button" id="goBackBtn" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300">Go Back</button>
-            <button type="button" id="confirmSubmitBtn" class="px-4 py-2 bg-[#2a9d8f] text-white rounded-lg text-sm font-medium hover:bg-[#23877b]">Yes, Finish</button>
+            <button type="button" id="confirmSubmitBtn" class="px-4 py-2 bg-[#2a9d8f] text-white rounded-lg text-sm font-medium hover:bg-[#23877b] transition">
+                Yes, Finish
+            </button>
         </div>
     </div>
 </div>
@@ -148,7 +150,6 @@
     const progressBar = document.getElementById('progressBar');
     const stepIndicator = document.getElementById('stepIndicator');
 
-    // Highlight selected radio box like Figma
     document.querySelectorAll('.question-radio').forEach(radio => {
         radio.addEventListener('change', function() {
             const currentStepEl = this.closest('.question-step');
@@ -219,7 +220,12 @@
         document.getElementById('confirmModal').classList.add('hidden');
     });
     document.getElementById('confirmSubmitBtn').addEventListener('click', function() {
+        if (isSubmitting) return;
         isSubmitting = true;
+        this.disabled = true;
+        this.textContent = 'Generating AI Summary...';
+        this.classList.add('opacity-75', 'cursor-wait');
+        document.getElementById('goBackBtn').disabled = true;
         document.getElementById('quizForm').submit();
     });
 
