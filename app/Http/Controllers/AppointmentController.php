@@ -38,11 +38,31 @@ class AppointmentController extends Controller
     );
 }
     // Free slots = opened by counsellor minus already booked (PBI #14 reads this)
-    public function slots(Request $r)
-    {
-        $r->validate(['counsellor_id' => 'required|exists:users,id', 'date' => 'required|date']);
-        return $this->freeSlots($r->counsellor_id, $r->date, $r->ignore);
-    }
+public function slots(Request $r)
+{
+    \Log::info('SLOTS API CALLED', [
+        'counsellor_id' => $r->counsellor_id,
+        'date' => $r->date,
+        'user_id' => auth()->id(),
+    ]);
+
+    $r->validate([
+        'counsellor_id' => 'required|exists:users,id',
+        'date' => 'required|date'
+    ]);
+
+    $slots = $this->freeSlots(
+        $r->counsellor_id,
+        $r->date,
+        $r->ignore
+    );
+
+    \Log::info('SLOTS API RESULT', [
+        'slots' => $slots->all(),
+    ]);
+
+    return response()->json($slots);
+}
 
     public function mine()
     {
