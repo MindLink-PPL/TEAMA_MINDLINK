@@ -11,9 +11,6 @@ use Tests\DuskTestCase;
 
 class WellbeingQuizPositiveTest extends DuskTestCase
 {
-    /**
-     * Ensure an active PDD quiz with at least 5 questions exists in MySQL.
-     */
     private function ensurePddQuizExists(): Quiz_Catalog
     {
         $this->assertNotEquals(
@@ -26,7 +23,7 @@ class WellbeingQuizPositiveTest extends DuskTestCase
             ->where('title', 'like', '%PDD%')
             ->first();
 
-        if (!$quiz) {
+        if (! $quiz) {
             $quiz = new Quiz_Catalog();
             $quiz->forceFill([
                 'title'       => 'Persistent Depressive Disorder (PDD)',
@@ -61,7 +58,6 @@ class WellbeingQuizPositiveTest extends DuskTestCase
 
     /**
      * TC.wellbeing_quiz.001 (PBI #15 - Positive)
-     * Student navigates from /wellbeing -> PDD quiz -> completes all questions -> views result.
      */
     public function test_student_can_complete_pdd_quiz_and_reach_result_page(): void
     {
@@ -69,32 +65,24 @@ class WellbeingQuizPositiveTest extends DuskTestCase
         $beforeCount = Quiz_Student_Result::where('quiz_id', $quiz->id)->count();
 
         $this->browse(function (Browser $browser) use ($quiz) {
-            // Step 1: User is on the Wellbeing self check-in homepage
+            // Step 1: Open /wellbeing and click #openCatalogBtn to view the Question Catalog
             $browser->visit('/wellbeing')
                 ->assertPathIs('/wellbeing')
                 ->assertSee('Wellbeing self check-in');
 
-            // Step 2: Open the PDD quiz detail page directly (bypassing JS tabs/modals)
+            $browser->script("document.getElementById('openCatalogBtn')?.click();");
+            $browser->pause(500)
+                ->assertSee($quiz->title);
+
+            // Step 2: Open the PDD quiz detail page and click #startQuizBtn ("Start The Test ->")
             $browser->visit("/wellbeing/{$quiz->id}")
                 ->assertPathIs("/wellbeing/{$quiz->id}")
                 ->assertSee($quiz->title);
 
-            // Click "Start The Test ->" if an intro screen is present
-            $browser->script("
-                if (document.querySelectorAll('input[type=\"radio\"]').length === 0) {
-                    const startBtn = Array.from(document.querySelectorAll('a[href], button, [onclick]'))
-                        .reverse()
-                        .find(el => /start the test|start|begin|take|proceed|mulai/i.test(el.textContent.replace(/\\s+/g, ' ')));
-                    if (startBtn) {
-                        const clickable = startBtn.closest('a, button, [onclick]') || startBtn;
-                        clickable.click();
-                    }
-                }
-            ");
-            $browser->pause(1200)
-                ->assertSee($quiz->title);
+            $browser->script("document.getElementById('startQuizBtn')?.click();");
+            $browser->pause(500);
 
-            // Step 3: Go through and answer all questions of the PDD quiz
+            // Step 3: Answer all questions of the PDD quiz
             foreach ($quiz->questions as $question) {
                 $firstOption = $question->options->first();
                 $browser->script("
@@ -102,26 +90,19 @@ class WellbeingQuizPositiveTest extends DuskTestCase
                     if (radio) {
                         radio.checked = true;
                         radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        if (radio.closest('label')) {
-                            radio.closest('label').click();
-                        }
                     }
                 ");
             }
 
-            // Step 4: Submit the quiz to view the Test/Result page
+            // Step 4: Submit the quiz form cleanly (setting isSubmitting = true to bypass beforeunload)
             $browser->script("
-                const form = document.querySelector('form:not([action*=\"logout\"])');
-                const submitBtn = form ? form.querySelector('button[type=\"submit\"], input[type=\"submit\"]') : null;
-                if (submitBtn) {
-                    submitBtn.click();
-                } else if (form) {
-                    form.submit();
-                }
+                if (typeof isSubmitting !== 'undefined') { isSubmitting = true; }
+                const form = document.getElementById('quizForm') || document.querySelector('form:not([action*=\"logout\"])');
+                if (form) { form.submit(); }
             ");
             $browser->pause(3000);
 
-            // Step 5: Observe and verify the newly completed quiz session on /wellbeing/results/{id}
+            // Step 5: Verify the newly completed quiz session on /wellbeing/results/{id}
             $latestResult = Quiz_Student_Result::where('quiz_id', $quiz->id)->latest('id')->first();
 
             $browser->assertPathIs('/wellbeing/results/' . $latestResult->id)
@@ -133,7 +114,6 @@ class WellbeingQuizPositiveTest extends DuskTestCase
         $afterCount = Quiz_Student_Result::where('quiz_id', $quiz->id)->count();
         $latestResult = Quiz_Student_Result::where('quiz_id', $quiz->id)->latest('id')->first();
 
-        // Explicit PHPUnit assertions to prevent "Risky" test warning
         $this->assertNotNull($latestResult, 'Expected a new PDD quiz result record to be stored.');
         $this->assertGreaterThan($beforeCount, $afterCount, 'Result count should increase by 1 after submission.');
         $this->assertEquals($quiz->id, $latestResult->quiz_id);

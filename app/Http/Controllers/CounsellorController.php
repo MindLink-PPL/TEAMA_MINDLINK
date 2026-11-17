@@ -2,15 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Appointment;
+use App\Models\Availability;
 use App\Models\CounsellingRequest;
+use Illuminate\Http\Request;
 
 class CounsellorController extends Controller
 {
     public function index()
     {
         $requests = CounsellingRequest::orderBy('created_at', 'desc')->get();
-        return view('counsellor.dashboard', compact('requests'));
+
+        $appointments = auth()->check()
+            ? Appointment::with('student:id,name,email')
+                ->where('counsellor_id', auth()->id())
+                ->orderBy('date')
+                ->orderBy('time')
+                ->get()
+            : collect();
+
+        $availabilities = auth()->check()
+            ? Availability::where('counsellor_id', auth()->id())
+                ->orderBy('date')
+                ->orderBy('time')
+                ->get()
+            : collect();
+
+        return view('counsellor.dashboard', compact('requests', 'appointments', 'availabilities'));
     }
 
     public function updateStatus(Request $request, $id)
@@ -25,7 +43,9 @@ class CounsellorController extends Controller
             'counsellor_notes.max' => 'Assessment notes cannot exceed 1000 characters.',
         ]);
 
-        $counsellingRequest = CounsellingRequest::findOrFail($id);
+        $counsellingRequest = CounsellingRequest::where('id', $id)
+            ->orWhere('request_id', $id)
+            ->firstOrFail();
 
         if (in_array($counsellingRequest->status, ['Approved', 'Declined'])) {
             return back()->withErrors([

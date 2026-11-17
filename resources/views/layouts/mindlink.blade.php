@@ -19,11 +19,11 @@
                     </div>
                 </div>
                 <nav class="mt-4 space-y-2 px-3">
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
+                    <a href="{{ url('/dashboard') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
                         <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">D</span>
                         <span>Dashboard</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
+                    <a href="{{ route('articles.index') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
                         <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">L</span>
                         <span>Learn</span>
                     </a>
@@ -31,11 +31,11 @@
                         <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">W</span>
                         <span>Wellbeing</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
+                    <a href="{{ route('counselling.request') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
                         <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">C</span>
                         <span>Counselling</span>
                     </a>
-                    <a href="#" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
+                    <a href="{{ url('/student/notifications') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
                         <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">N</span>
                         <span>Notifications</span>
                     </a>

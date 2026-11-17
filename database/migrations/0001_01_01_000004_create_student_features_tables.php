@@ -23,14 +23,21 @@ return new class extends Migration
 
         Schema::create('counselling_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('request_id')->nullable()->index();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->unsignedBigInteger('student_id')->nullable()->index();
             $table->string('counsellor_name')->default('Alisa • Student wellbeing');
-            $table->string('concern')->default('Academic pressure and anxiety');
+            $table->text('concern');
+            $table->text('goals')->nullable();
             $table->text('notes')->nullable();
+            $table->text('counsellor_notes')->nullable();
             $table->timestamp('consent_accepted_at')->nullable();
             $table->string('scheduled_date')->default('Wednesday, 21 October 2026');
             $table->string('scheduled_time')->default('10:00');
             $table->string('session_mode')->default('In person');
+            $table->string('appointment_date')->default('2026-10-21');
+            $table->string('appointment_time')->default('10:00');
+            $table->string('appointment_mode')->default('In person');
             $table->string('status')->default('Confirmed');
             $table->timestamps();
         });
@@ -45,4 +52,3 @@ return new class extends Migration
         Schema::dropIfExists('wellbeing_checkins');
     }
 };
-

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 
 class User extends Authenticatable
 {
@@ -24,14 +25,17 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'role_id',
         'certificate_path',
         'verification_status',
         'rejection_reason',
-        'role_id'
-      
     ];
 
-
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -50,16 +54,109 @@ class User extends Authenticatable
         ];
     }
 
-    public function savedArticles()
+    /**
+     * Automatically keep the 'role' string column and 'role_id' foreign key in sync.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if (! Schema::hasTable('roles')) {
+                return;
+            }
+
+            // If role_id was explicitly set/changed, sync the string 'role' column
+            if ($user->isDirty('role_id') && ! empty($user->role_id)) {
+                $roleModel = Role::find($user->role_id);
+                if ($roleModel) {
+                    $user->attributes['role'] = $roleModel->slug === 'user' ? 'student' : $roleModel->slug;
+                }
+            }
+            // If 'role' string was set (e.g. 'student', 'counsellor', 'admin') and role_id is empty, sync role_id
+            elseif (! empty($user->attributes['role']) && empty($user->role_id)) {
+                $rawRole = $user->attributes['role'];
+                $slugCandidates = $rawRole === 'student' ? ['user', 'student'] : [$rawRole];
+
+                $roleModel = Role::whereIn('slug', $slugCandidates)->first();
+                if (! $roleModel) {
+                    $defaultSlug = $rawRole === 'student' ? 'user' : $rawRole;
+                    $roleModel = Role::firstOrCreate(
+                        ['slug' => $defaultSlug],
+                        ['name' => ucfirst($rawRole)]
+                    );
+                }
+
+                $user->role_id = $roleModel->id;
+            }
+            // Default new users without role/role_id to Student
+            elseif (empty($user->role_id) && empty($user->attributes['role'])) {
+                $user->attributes['role'] = 'student';
+                $roleModel = Role::whereIn('slug', ['user', 'student'])->first();
+                if ($roleModel) {
+                    $user->role_id = $roleModel->id;
+                }
+            }
+        });
+    }
+
+    /**
+     * Ensure $user->role returns the Role relationship model when accessed as an object property,
+     * while keeping the 'role' database column intact for SQL queries.
+     */
+    public function getAttribute($key)
+    {
+        if ($key === 'role') {
+            if ($this->relationLoaded('role')) {
+                return $this->getRelationValue('role');
+            }
+
+            if (! empty($this->attributes['role_id'])) {
+                return $this->getRelationValue('role');
+            }
+
+            if (! empty($this->attributes['role']) && Schema::hasTable('roles')) {
+                $raw = $this->attributes['role'];
+                $slugs = $raw === 'student' ? ['user', 'student'] : [$raw];
+
+                return Role::whereIn('slug', $slugs)->first();
+            }
+
+            return null;
+        }
+
+        return parent::getAttribute($key);
+    }
+
+    /**
+     * Get the role name string ('admin', 'counsellor', 'student') regardless of how the user was created.
+     */
+    public function getRoleStringAttribute(): string
+    {
+        if ($this->isAdmin()) {
+            return 'admin';
+        }
+
+        if ($this->isCounsellor()) {
+            return 'counsellor';
+        }
+
+        return 'student';
+    }
+
+    /**
+     * Articles saved by the user.
+     */
+    public function savedArticles(): BelongsToMany
     {
         return $this->belongsToMany(Article::class, 'saved_articles', 'user_id', 'article_id')
-                    ->withPivot('saved_at');
+            ->withPivot('saved_at');
+    }
+
     /**
      * Get the role that this user belongs to.
      */
     public function role(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Role::class, 'role_id');
     }
 
     /**
@@ -91,12 +188,13 @@ class User extends Authenticatable
      */
     public function hasRole(string|array $roles): bool
     {
-        if (! $this->role) {
+        $roles = is_array($roles) ? $roles : [$roles];
+        $roleModel = $this->role;
+        $userSlug = $roleModel ? $roleModel->slug : ($this->attributes['role'] ?? null);
+
+        if (! $userSlug) {
             return false;
         }
-
-        $roles = is_array($roles) ? $roles : [$roles];
-        $userSlug = $this->role->slug;
 
         foreach ($roles as $role) {
             if ($userSlug === $role) {
@@ -164,7 +262,6 @@ class User extends Authenticatable
             return false;
         }
 
-        // Administrators have all permissions
         if ($this->isAdmin()) {
             return true;
         }

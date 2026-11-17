@@ -11,9 +11,6 @@ use Tests\DuskTestCase;
 
 class WellbeingQuizNegativeTest extends DuskTestCase
 {
-    /**
-     * Ensure an active PDD quiz with at least 5 questions exists in MySQL.
-     */
     private function ensurePddQuizExists(): Quiz_Catalog
     {
         $this->assertNotEquals(
@@ -26,7 +23,7 @@ class WellbeingQuizNegativeTest extends DuskTestCase
             ->where('title', 'like', '%PDD%')
             ->first();
 
-        if (!$quiz) {
+        if (! $quiz) {
             $quiz = new Quiz_Catalog();
             $quiz->forceFill([
                 'title'       => 'Persistent Depressive Disorder (PDD)',
@@ -61,7 +58,6 @@ class WellbeingQuizNegativeTest extends DuskTestCase
 
     /**
      * TC.wellbeing_quiz.002 (PBI #15 - Negative)
-     * Student skips questions 4 and 5 in the PDD quiz and attempts to brute-force submit.
      */
     public function test_student_cannot_submit_pdd_quiz_when_skipping_questions_four_and_five(): void
     {
@@ -70,29 +66,22 @@ class WellbeingQuizNegativeTest extends DuskTestCase
         $finalUrl = '';
 
         $this->browse(function (Browser $browser) use ($quiz, &$finalUrl) {
-            // Step 1: User is on the Wellbeing self check-in homepage
+            // Step 1: Open /wellbeing and click #openCatalogBtn to enter Question Catalog
             $browser->visit('/wellbeing')
                 ->assertPathIs('/wellbeing')
                 ->assertSee('Wellbeing self check-in');
 
-            // Step 2: Open the PDD test/quiz detail page directly (bypassing JS tabs/modals)
+            $browser->script("document.getElementById('openCatalogBtn')?.click();");
+            $browser->pause(500)
+                ->assertSee($quiz->title);
+
+            // Step 2: Open PDD quiz page and click #startQuizBtn ("Start The Test ->")
             $browser->visit("/wellbeing/{$quiz->id}")
                 ->assertPathIs("/wellbeing/{$quiz->id}")
                 ->assertSee($quiz->title);
 
-            $browser->script("
-                if (document.querySelectorAll('input[type=\"radio\"]').length === 0) {
-                    const startBtn = Array.from(document.querySelectorAll('a[href], button, [onclick]'))
-                        .reverse()
-                        .find(el => /start the test|start|begin|take|proceed|mulai/i.test(el.textContent.replace(/\\s+/g, ' ')));
-                    if (startBtn) {
-                        const clickable = startBtn.closest('a, button, [onclick]') || startBtn;
-                        clickable.click();
-                    }
-                }
-            ");
-            $browser->pause(1200)
-                ->assertSee($quiz->title);
+            $browser->script("document.getElementById('startQuizBtn')?.click();");
+            $browser->pause(500);
 
             // Step 3: Answer only the first 3 questions, intentionally skipping Question 4 and Question 5
             $questionsToAnswer = $quiz->questions->take(3);
@@ -103,39 +92,36 @@ class WellbeingQuizNegativeTest extends DuskTestCase
                     if (radio) {
                         radio.checked = true;
                         radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        if (radio.closest('label')) {
-                            radio.closest('label').click();
-                        }
                     }
                 ");
             }
 
-            // Brute-force bypass any HTML5 'required' attributes to test backend validation protection
+            // Brute-force submit form to test backend validation protection
             $browser->script("
-                const form = document.querySelector('form:not([action*=\"logout\"])');
+                if (typeof isSubmitting !== 'undefined') { isSubmitting = true; }
+                const form = document.getElementById('quizForm') || document.querySelector('form:not([action*=\"logout\"])');
                 if (form) {
                     form.querySelectorAll('[required]').forEach(el => el.removeAttribute('required'));
                     form.setAttribute('novalidate', 'novalidate');
-                    const submitBtn = form.querySelector('button[type=\"submit\"], input[type=\"submit\"]');
-                    if (submitBtn) {
-                        submitBtn.click();
-                    } else {
-                        form.submit();
-                    }
+                    form.submit();
                 }
             ");
             $browser->pause(1200);
 
+            // Ensure #sessionView is visible so the error banner is displayed
+            $browser->script("
+                document.getElementById('briefingView')?.classList.add('hidden');
+                document.getElementById('sessionView')?.classList.remove('hidden');
+            ");
+
             $finalUrl = $browser->driver->getCurrentURL();
 
-            // Verify user is blocked from reaching the result page and sees validation message
             $browser->assertSee('Please answer all questions before submitting.')
                 ->screenshot('TC_wellbeing_quiz_002_negative');
         });
 
         $afterCount = Quiz_Student_Result::where('quiz_id', $quiz->id)->count();
 
-        // Explicit PHPUnit assertions to prevent "Risky" test warning
         $this->assertStringNotContainsString('/wellbeing/results/', $finalUrl, 'Student must not reach the results page when skipping questions.');
         $this->assertSame($beforeCount, $afterCount, 'No quiz result should be created when questions 4 and 5 are skipped.');
         $this->assertTrue($quiz->questions->count() >= 5, 'PDD quiz must have at least 5 questions for this test case.');

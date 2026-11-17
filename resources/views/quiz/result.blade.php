@@ -84,7 +84,7 @@
 
         <!-- Right Buttons: Book Consultation & View History -->
         <div class="flex flex-wrap items-center gap-4">
-            <a href="#" class="inline-flex items-center gap-3 bg-[#2a9d8f] hover:bg-[#23877b] text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
+            <a href="{{ route('counselling.request') }}" class="inline-flex items-center gap-3 bg-[#2a9d8f] hover:bg-[#23877b] text-white px-4 py-2.5 rounded-lg text-xs font-bold shadow-sm transition">
                 <span class="leading-tight text-left">Book a<br>consultation<br>session now!</span>
                 <img src="{{ asset('images/icons/calendar-plus.png') }}" alt="Book Consultation" class="w-6 h-6 object-contain brightness-0 invert">
             </a>

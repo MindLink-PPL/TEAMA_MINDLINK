@@ -4,7 +4,7 @@
 
 @section('content')
 <!-- STATE 1: Quiz Details Briefing View -->
-<div id="briefingView" class="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+<div id="briefingView" class="{{ $errors->any() ? 'hidden ' : '' }}max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 p-8">
     <div class="mb-8 border-b pb-6">
         <span class="text-xs font-semibold text-teal-600 uppercase">Stress Handling</span>
         <h2 class="text-2xl font-bold text-gray-900 mt-1">{{ $quiz->title }}</h2>
@@ -37,7 +37,7 @@
 </div>
 
 <!-- STATE 2: Step-by-Step Quiz Session View -->
-<div id="sessionView" class="hidden max-w-4xl mx-auto">
+<div id="sessionView" class="{{ $errors->any() ? '' : 'hidden ' }}max-w-4xl mx-auto">
     <!-- Top Progress Header -->
     <div class="mb-8">
         <div class="flex justify-between items-center mb-2">

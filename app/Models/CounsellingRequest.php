@@ -11,9 +11,14 @@ class CounsellingRequest extends Model
     use HasFactory;
 
     protected $table = 'counselling_requests';
-    protected $primaryKey = 'request_id';
+    protected $primaryKey = 'id';
+
+    protected $appends = [
+        'request_id',
+    ];
 
     protected $fillable = [
+        'request_id',
         'user_id',
         'student_id',
         'student_code',
@@ -50,11 +55,57 @@ class CounsellingRequest extends Model
     }
 
     /**
+     * Synchronize paired attributes across teammates' implementations.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (CounsellingRequest $req) {
+            if (empty($req->user_id) && ! empty($req->student_id)) {
+                $req->user_id = $req->student_id;
+            } elseif (empty($req->student_id) && ! empty($req->user_id)) {
+                $req->student_id = $req->user_id;
+            }
+
+            if (empty($req->appointment_date) && ! empty($req->scheduled_date)) {
+                $req->appointment_date = $req->scheduled_date;
+            } elseif (empty($req->scheduled_date) && ! empty($req->appointment_date)) {
+                $req->scheduled_date = $req->appointment_date;
+            }
+
+            if (empty($req->appointment_time) && ! empty($req->scheduled_time)) {
+                $req->appointment_time = $req->scheduled_time;
+            } elseif (empty($req->scheduled_time) && ! empty($req->appointment_time)) {
+                $req->scheduled_time = $req->appointment_time;
+            }
+
+            if (empty($req->appointment_mode) && ! empty($req->session_mode)) {
+                $req->appointment_mode = $req->session_mode;
+            } elseif (empty($req->session_mode) && ! empty($req->appointment_mode)) {
+                $req->session_mode = $req->appointment_mode;
+            }
+        });
+
+        static::created(function (CounsellingRequest $req) {
+            if (empty($req->attributes['request_id'])) {
+                $req->forceFill(['request_id' => $req->id])->saveQuietly();
+            }
+        });
+    }
+
+    /**
+     * Ensure $request->request_id always returns the primary key ID.
+     */
+    public function getRequestIdAttribute(): ?int
+    {
+        return $this->attributes['request_id'] ?? $this->attributes['id'] ?? null;
+    }
+
+    /**
      * Get the student who submitted this counselling request.
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
@@ -74,6 +125,6 @@ class CounsellingRequest extends Model
             return $this->student_code;
         }
 
-        return 'ST-' . (180 + ($this->user_id ?? $this->request_id));
+        return 'ST-' . (180 + ($this->user_id ?? $this->id));
     }
 }

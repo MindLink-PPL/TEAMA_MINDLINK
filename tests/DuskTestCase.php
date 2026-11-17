@@ -73,13 +73,9 @@ abstract class DuskTestCase extends BaseTestCase
     {
         parent::setUp();
 
-        if (config('database.connections.sqlite.database') === ':memory:') {
+        if (config('database.default') === 'sqlite' && config('database.connections.sqlite.database') === ':memory:') {
             config(['database.connections.sqlite.database' => database_path('database.sqlite')]);
             DB::purge('sqlite');
-        }
-
-        if (config('cache.default') === 'array') {
-            config(['cache.default' => 'database']);
         }
 
         if (! User::where('email', 'admin@gmail.com')->exists()) {
@@ -99,6 +95,10 @@ abstract class DuskTestCase extends BaseTestCase
      */
     protected function baseUrl(): string
     {
+        if (! empty($_ENV['DUSK_START_URL'])) {
+            return rtrim($_ENV['DUSK_START_URL'], '/');
+        }
+
         return 'http://127.0.0.1:8000';
     }
 
@@ -224,7 +224,7 @@ abstract class DuskTestCase extends BaseTestCase
     }
 
     /**
-     * Automatically start a clean ChromeDriver instance once per suite with a writable temp directory.
+     * Automatically start a clean WebDriver instance once per suite with a writable temp directory.
      */
     protected static function ensureChromeDriverRunning(): void
     {
@@ -235,6 +235,7 @@ abstract class DuskTestCase extends BaseTestCase
         if (static::$chromeDriverHandle === null && static::isPortOpen('127.0.0.1', 9515)) {
             if (OperatingSystem::onWindows()) {
                 @exec('taskkill /F /IM chromedriver-win.exe 2>NUL');
+                @exec('taskkill /F /IM msedgedriver.exe 2>NUL');
                 usleep(100000);
             }
         }
@@ -265,7 +266,7 @@ abstract class DuskTestCase extends BaseTestCase
 
         $resolved = realpath($driverPath);
         if ($resolved === false) {
-            throw new RuntimeException("Invalid path to Chromedriver [{$driverPath}].");
+            throw new RuntimeException("Invalid path to WebDriver [{$driverPath}].");
         }
 
         $env = static::buildCleanEnvironment(OperatingSystem::onWindows() || OperatingSystem::onMac() ? [] : [
@@ -281,7 +282,7 @@ abstract class DuskTestCase extends BaseTestCase
         );
 
         if (! is_resource($handle)) {
-            throw new RuntimeException('Unable to start ChromeDriver process.');
+            throw new RuntimeException('Unable to start WebDriver process.');
         }
 
         static::$chromeDriverHandle = $handle;
@@ -302,10 +303,14 @@ abstract class DuskTestCase extends BaseTestCase
 
         $env = static::buildCleanEnvironment([
             'APP_URL' => 'http://127.0.0.1:8000',
-            'DB_CONNECTION' => 'sqlite',
-            'DB_DATABASE' => $basePath . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'database.sqlite',
-            'CACHE_STORE' => 'database',
-            'SESSION_DRIVER' => 'database',
+            'DB_CONNECTION' => getenv('DB_CONNECTION') ?: 'mysql',
+            'DB_HOST' => getenv('DB_HOST') ?: '127.0.0.1',
+            'DB_PORT' => getenv('DB_PORT') ?: '3308',
+            'DB_DATABASE' => getenv('DB_DATABASE') ?: 'ppl_mindlink',
+            'DB_USERNAME' => getenv('DB_USERNAME') ?: 'root',
+            'DB_PASSWORD' => getenv('DB_PASSWORD') ?: '',
+            'CACHE_STORE' => 'file',
+            'SESSION_DRIVER' => 'file',
         ]);
 
         $handle = proc_open(
@@ -325,7 +330,7 @@ abstract class DuskTestCase extends BaseTestCase
     }
 
     /**
-     * Register a single shutdown hook to terminate the background server and ChromeDriver processes cleanly.
+     * Register a single shutdown hook to terminate the background server and WebDriver processes cleanly.
      */
     protected static function registerProcessShutdown(): void
     {
@@ -362,24 +367,49 @@ abstract class DuskTestCase extends BaseTestCase
         $options = (new ChromeOptions)->addArguments(collect([
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
             '--disable-search-engine-choice-screen',
-            '--user-data-dir=' . storage_path('framework/testing/chrome-profile'),
+            '--disable-smooth-scrolling',
+            '--no-sandbox',
+            '--disable-gpu',
         ])->unless($this->hasHeadlessDisabled(), function (Collection $items) {
             return $items->merge([
-                '--disable-gpu',
                 '--headless=new',
             ]);
         })->all());
 
-        return RemoteWebDriver::create(
-            $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? 'http://localhost:9515',
-            DesiredCapabilities::chrome()->setCapability(
-                ChromeOptions::CAPABILITY, $options
-            )
-        );
+        $driverUrl = $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? ('http://127.0.0.1:' . static::$chromeDriverPort);
+
+        // Allow teammates using ChromeDriver to set DUSK_BROWSER=chrome in their .env
+        if (env('DUSK_BROWSER', 'edge') === 'chrome') {
+            return RemoteWebDriver::create(
+                $driverUrl,
+                DesiredCapabilities::chrome()->setCapability(
+                    ChromeOptions::CAPABILITY,
+                    $options
+                )
+            );
+        }
+
+        // Default to Microsoft Edge on Windows
+        $edgeBinary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+        if (file_exists($edgeBinary)) {
+            $options->setBinary($edgeBinary);
+        } else {
+            $edgeBinary64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
+            if (file_exists($edgeBinary64)) {
+                $options->setBinary($edgeBinary64);
+            }
+        }
+
+        $capabilities = new DesiredCapabilities([
+            WebDriverCapabilityType::BROWSER_NAME => 'MicrosoftEdge',
+            'ms:edgeOptions' => $options->toArray(),
+        ]);
+
+        return RemoteWebDriver::create($driverUrl, $capabilities);
     }
 
     /**
-     * Create a new Browser instance tailored for MindLink layouts and Chrome navigation timing.
+     * Create a new Browser instance tailored for MindLink layouts and browser navigation timing.
      */
     protected function newBrowser($driver): Browser
     {

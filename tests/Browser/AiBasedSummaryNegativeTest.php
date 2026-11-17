@@ -11,9 +11,6 @@ use Tests\DuskTestCase;
 
 class AiBasedSummaryNegativeTest extends DuskTestCase
 {
-    /**
-     * Ensure an active DTS quiz exists in MySQL.
-     */
     private function ensureDtsQuizExists(): Quiz_Catalog
     {
         $this->assertNotEquals(
@@ -29,7 +26,7 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
             })
             ->first();
 
-        if (!$quiz) {
+        if (! $quiz) {
             $quiz = new Quiz_Catalog();
             $quiz->forceFill([
                 'title'       => 'Distress Tolerance Scale (DTS)',
@@ -64,7 +61,6 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
 
     /**
      * TC.AI_based_summary.002 (PBI #16 - Negative)
-     * Verify that reloading /wellbeing/results/{id} does not change or overwrite the saved AI summary.
      */
     public function test_ai_summary_does_not_change_when_result_page_is_reloaded(): void
     {
@@ -73,29 +69,20 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
         $summaryAfterReload = null;
 
         $this->browse(function (Browser $browser) use ($quiz, &$initialSummary, &$summaryAfterReload) {
-            // Step 1: User is on the Wellbeing self check-in homepage
             $browser->visit('/wellbeing')
                 ->assertPathIs('/wellbeing');
 
-            // Step 2: View DTS test details directly and proceed with the DTS test
+            $browser->script("document.getElementById('openCatalogBtn')?.click();");
+            $browser->pause(500)
+                ->assertSee($quiz->title);
+
             $browser->visit("/wellbeing/{$quiz->id}")
                 ->assertPathIs("/wellbeing/{$quiz->id}")
                 ->assertSee($quiz->title);
 
-            $browser->script("
-                if (document.querySelectorAll('input[type=\"radio\"]').length === 0) {
-                    const startBtn = Array.from(document.querySelectorAll('a[href], button, [onclick]'))
-                        .reverse()
-                        .find(el => /start the test|start|begin|take|proceed|mulai/i.test(el.textContent.replace(/\\s+/g, ' ')));
-                    if (startBtn) {
-                        const clickable = startBtn.closest('a, button, [onclick]') || startBtn;
-                        clickable.click();
-                    }
-                }
-            ");
-            $browser->pause(1200);
+            $browser->script("document.getElementById('startQuizBtn')?.click();");
+            $browser->pause(500);
 
-            // Step 3: Student answers all questions of the DTS test
             foreach ($quiz->questions as $question) {
                 $option = $question->options->last();
                 $browser->script("
@@ -103,21 +90,14 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
                     if (radio) {
                         radio.checked = true;
                         radio.dispatchEvent(new Event('change', { bubbles: true }));
-                        if (radio.closest('label')) {
-                            radio.closest('label').click();
-                        }
                     }
                 ");
             }
 
             $browser->script("
-                const form = document.querySelector('form:not([action*=\"logout\"])');
-                const submitBtn = form ? form.querySelector('button[type=\"submit\"], input[type=\"submit\"]') : null;
-                if (submitBtn) {
-                    submitBtn.click();
-                } else if (form) {
-                    form.submit();
-                }
+                if (typeof isSubmitting !== 'undefined') { isSubmitting = true; }
+                const form = document.getElementById('quizForm') || document.querySelector('form:not([action*=\"logout\"])');
+                if (form) { form.submit(); }
             ");
             $browser->pause(3000);
 
@@ -128,7 +108,7 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
             $browser->assertPathIs('/wellbeing/results/' . $result->id)
                 ->assertSee($snippet);
 
-            // Step 4: Reload the result page once and verify no change in the AI summary occurs
+            // Reload the result page once and verify no change in the AI summary occurs
             $browser->refresh()
                 ->pause(1000)
                 ->assertPathIs('/wellbeing/results/' . $result->id)
@@ -138,7 +118,6 @@ class AiBasedSummaryNegativeTest extends DuskTestCase
             $summaryAfterReload = $result->fresh()->ai_summary;
         });
 
-        // Explicit PHPUnit assertions to prevent "Risky" test warning
         $this->assertNotEmpty($initialSummary, 'Initial AI summary must be generated upon completion.');
         $this->assertSame($initialSummary, $summaryAfterReload, 'AI summary must remain identical after reloading the result page.');
     }

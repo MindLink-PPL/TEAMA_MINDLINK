@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\CounsellingRequest;
+use App\Models\InformedConsent;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\StudentReferral;
 use App\Models\User;
 use App\Models\WellbeingCheckin;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
@@ -18,12 +19,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([
-            UserSeeder::class,
-            QuizSeeder::class,
-            CounsellorSeeder::class,
-        ]);
-
         // 1. Create Roles
         $adminRole = Role::updateOrCreate(
             ['slug' => 'admin'],
@@ -182,25 +177,37 @@ class DatabaseSeeder extends Seeder
             $createdPermissions['profile.manage']->id,
         ]);
 
-        // 4. Create Institutional Accounts
-        // Default test administrator — log in with Email: admin@gmail.com / Password: 12345
+        // 4. Create Institutional Accounts (Create testStudent first so user_id = 1 is a Student)
+        $testStudent = User::updateOrCreate(
+            ['email' => 'student@gmail.com'],
+            [
+                'name' => 'Student',
+                'password' => Hash::make('12345'),
+                'role' => 'student',
+                'role_id' => $studentRole->id,
+                'email_verified_at' => now(),
+            ]
+        );
+
         User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Admin',
                 'password' => Hash::make('12345'),
+                'role' => 'admin',
                 'role_id' => $adminRole->id,
                 'email_verified_at' => now(),
             ]
         );
 
-        // Default test counsellor — log in with Email: counsellor@gmail.com / Password: 12345
         $testCounsellor = User::updateOrCreate(
             ['email' => 'counsellor@gmail.com'],
             [
                 'name' => 'Counsellor',
                 'password' => Hash::make('12345'),
+                'role' => 'counsellor',
                 'role_id' => $counsellorRole->id,
+                'verification_status' => 'verified',
                 'email_verified_at' => now(),
             ]
         );
@@ -210,7 +217,9 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Alisa Vance (Counsellor)',
                 'password' => Hash::make('password'),
+                'role' => 'counsellor',
                 'role_id' => $counsellorRole->id,
+                'verification_status' => 'verified',
                 'email_verified_at' => now(),
             ]
         );
@@ -220,18 +229,9 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Sarah Connor (Counsellor)',
                 'password' => Hash::make('password'),
+                'role' => 'counsellor',
                 'role_id' => $counsellorRole->id,
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Default test student — log in with Email: student@gmail.com / Password: 12345
-        $testStudent = User::updateOrCreate(
-            ['email' => 'student@gmail.com'],
-            [
-                'name' => 'Student',
-                'password' => Hash::make('12345'),
-                'role_id' => $studentRole->id,
+                'verification_status' => 'verified',
                 'email_verified_at' => now(),
             ]
         );
@@ -241,6 +241,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Alex Rivera (Student)',
                 'password' => Hash::make('password'),
+                'role' => 'student',
                 'role_id' => $studentRole->id,
                 'email_verified_at' => now(),
             ]
@@ -251,12 +252,29 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'John Doe (Student)',
                 'password' => Hash::make('password'),
+                'role' => 'student',
                 'role_id' => $studentRole->id,
                 'email_verified_at' => now(),
             ]
         );
 
-        // 5. Seed Authorised Student Wellbeing Check-ins
+        // 5. Run Module Seeders (Quizzes, Counsellors, Articles)
+        $this->call([
+            QuizSeeder::class,
+            CounsellorSeeder::class,
+            ArticleSeeder::class,
+        ]);
+
+        // 6. Seed Default Informed Consent Record (for PBI #7 Admin Consent table)
+        InformedConsent::firstOrCreate(
+            ['student_id' => '102022440009'],
+            [
+                'is_agreed' => true,
+                'agreed_at' => now(),
+            ]
+        );
+
+        // 7. Seed Authorised Student Wellbeing Check-ins
         WellbeingCheckin::firstOrCreate(
             [
                 'user_id' => $testStudent->id,
@@ -293,14 +311,12 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 6. Seed Counselling Requests matching PG-01 (Student Upcoming Appointment) & PG-05 (Counsellor Request Queue)
-        // Request 1: ST-187 (Scheduled at 10:00 — shown on both PG-01 and PG-05)
+        // 8. Seed Counselling Requests matching PG-01 & PG-05
         $req187 = CounsellingRequest::updateOrCreate(
-            [
-                'student_code' => 'ST-187',
-            ],
+            ['student_code' => 'ST-187'],
             [
                 'user_id' => $testStudent->id,
+                'student_id' => $testStudent->id,
                 'counsellor_name' => 'Alisa • Student wellbeing',
                 'counsellor_id' => $alisaCounsellor->id,
                 'concern' => 'Study pressure',
@@ -313,19 +329,20 @@ class DatabaseSeeder extends Seeder
                 'scheduled_date' => 'Wednesday, 21 October 2026',
                 'scheduled_time' => '10:00',
                 'session_mode' => 'In person',
+                'appointment_date' => '2026-10-21',
+                'appointment_time' => '10:00',
+                'appointment_mode' => 'In person',
                 'status' => 'Confirmed',
                 'priority' => 'Scheduled',
                 'submitted_label' => 'Study pressure • appointment 10:00',
             ]
         );
 
-        // Request 2: ST-204 (High priority — Persistent anxiety • submitted 09:12)
         $req204 = CounsellingRequest::updateOrCreate(
-            [
-                'student_code' => 'ST-204',
-            ],
+            ['student_code' => 'ST-204'],
             [
                 'user_id' => $student1->id,
+                'student_id' => $student1->id,
                 'counsellor_name' => 'Alisa • Student wellbeing',
                 'counsellor_id' => $alisaCounsellor->id,
                 'concern' => 'Persistent anxiety',
@@ -338,19 +355,20 @@ class DatabaseSeeder extends Seeder
                 'scheduled_date' => 'Wednesday, 21 October 2026',
                 'scheduled_time' => '10:00',
                 'session_mode' => 'In person',
+                'appointment_date' => '2026-10-21',
+                'appointment_time' => '10:00',
+                'appointment_mode' => 'In person',
                 'status' => 'Confirmed',
                 'priority' => 'High priority',
                 'submitted_label' => 'Persistent anxiety • submitted 09:12',
             ]
         );
 
-        // Request 3: ST-221 (New — Sleep difficulty • submitted yesterday)
         CounsellingRequest::updateOrCreate(
-            [
-                'student_code' => 'ST-221',
-            ],
+            ['student_code' => 'ST-221'],
             [
                 'user_id' => $student2->id,
+                'student_id' => $student2->id,
                 'counsellor_name' => 'Alisa • Student wellbeing',
                 'counsellor_id' => $alisaCounsellor->id,
                 'concern' => 'Sleep difficulty',
@@ -363,19 +381,20 @@ class DatabaseSeeder extends Seeder
                 'scheduled_date' => 'Thursday, 22 October 2026',
                 'scheduled_time' => '13:30',
                 'session_mode' => 'Online',
+                'appointment_date' => '2026-10-22',
+                'appointment_time' => '13:30',
+                'appointment_mode' => 'Online',
                 'status' => 'Pending review',
                 'priority' => 'New',
                 'submitted_label' => 'Sleep difficulty • submitted yesterday',
             ]
         );
 
-        // Request 4: ST-163 (Follow-up — Follow-up requested by student)
         CounsellingRequest::updateOrCreate(
-            [
-                'student_code' => 'ST-163',
-            ],
+            ['student_code' => 'ST-163'],
             [
                 'user_id' => $student1->id,
+                'student_id' => $student1->id,
                 'counsellor_name' => 'Sarah Connor • Academic & personal support',
                 'counsellor_id' => $sarahCounsellor->id,
                 'concern' => 'Follow-up requested by student',
@@ -388,13 +407,16 @@ class DatabaseSeeder extends Seeder
                 'scheduled_date' => 'Wednesday, 21 October 2026',
                 'scheduled_time' => '15:00',
                 'session_mode' => 'In person',
+                'appointment_date' => '2026-10-21',
+                'appointment_time' => '15:00',
+                'appointment_mode' => 'In person',
                 'status' => 'Confirmed',
                 'priority' => 'Follow-up',
                 'submitted_label' => 'Follow-up requested by student',
             ]
         );
 
-        // 7. Seed Initial Support Referrals for Counsellor Referrals Workspace
+        // 9. Seed Initial Support Referrals
         StudentReferral::firstOrCreate(
             [
                 'student_code' => 'ST-204',
