@@ -7,8 +7,12 @@ use App\Http\Controllers\Student\StudentPortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return response()->file(base_path('index.html'));
 });
+
+Route::get('/{any}', function () {
+    return response()->file(base_path('index.html'));
+})->where('any', '.*');
 
 Route::get('/dashboard', function () {
     $user = auth()->user()->load('role.permissions');
