@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
 
 class UserSeeder extends Seeder
 {
@@ -18,10 +18,18 @@ class UserSeeder extends Seeder
 
         DB::table('users')->insertOrIgnore([
             [
-                'id' => 1,
-                'name' => 'Demo Student',
-                'email' => 'student@telkomuniversity.ac.id',
-                'password' => Hash::make('password123'),
+                'id'         => 1,
+                'name'       => 'Demo Student',
+                'email'      => 'student@telkomuniversity.ac.id',
+                'password'   => Hash::make('password123'),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
+            [
+                'id'         => 2,
+                'name'       => 'Admin MindLink',
+                'email'      => 'admin@telkomuniversity.ac.id',
+                'password'   => Hash::make('pass1234'),
                 'created_at' => $now,
                 'updated_at' => $now,
             ],

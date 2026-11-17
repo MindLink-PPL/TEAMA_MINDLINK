@@ -1,14 +1,15 @@
 <?php
 
+use App\Http\Controllers\AdminQuestionnaireController;
 use App\Http\Controllers\QuestionnaireController;
 use Illuminate\Support\Facades\Route;
 
-// 1. Keep your teammate's static landing page at '/' (or temporarily swap to redirect to quiz.index while testing)
+// static alnding forced to quiz.index
 Route::get('/', function () {
     return redirect()->route('quiz.index');
 });
 
-// 2. Define all specific module routes BEFORE any wildcard catch-all
+// student quiz fetaure CRUD Routes
 Route::prefix('wellbeing')->name('quiz.')->group(function () {
     Route::get('/', [QuestionnaireController::class, 'index'])->name('index');
     Route::get('/results/{id}', [QuestionnaireController::class, 'result'])->name('result');
@@ -17,7 +18,18 @@ Route::prefix('wellbeing')->name('quiz.')->group(function () {
     Route::post('/{id}/submit', [QuestionnaireController::class, 'store'])->name('store');
 });
 
-// 3. Catch-all fallback MUST always be the very last route in the file
+// Admin Wellbeing Questionnaire CRUD Routes
+Route::prefix('admin/wellbeing')->name('admin.quiz.')->group(function () {
+    Route::get('/', [AdminQuestionnaireController::class, 'index'])->name('index');
+    Route::get('/create', [AdminQuestionnaireController::class, 'create'])->name('create');
+    Route::post('/', [AdminQuestionnaireController::class, 'store'])->name('store');
+    Route::get('/{id}', [AdminQuestionnaireController::class, 'show'])->name('show');
+    Route::get('/{id}/edit', [AdminQuestionnaireController::class, 'edit'])->name('edit');
+    Route::put('/{id}', [AdminQuestionnaireController::class, 'update'])->name('update');
+    Route::delete('/{id}', [AdminQuestionnaireController::class, 'destroy'])->name('destroy');
+});
+
+// fallbakc route, stuff like that
 Route::get('/{any}', function () {
     return response()->file(base_path('index.html'));
 })->where('any', '.*');

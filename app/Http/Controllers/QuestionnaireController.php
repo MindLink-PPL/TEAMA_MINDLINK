@@ -88,6 +88,7 @@ class QuestionnaireController extends Controller
             'user_id'        => Auth::id() ?? 1,
             'quiz_id'        => $quiz->id,
             'total_score'    => $totalScore,
+            'max_score'      => $maxScore,
             'distress_level' => $distressLevel,
             'ai_summary'     => $aiSummary,
         ]);
@@ -105,12 +106,18 @@ class QuestionnaireController extends Controller
             abort(403, 'Unauthorized access to this wellbeing result.');
         }
 
-        $maxScore = 0;
-        foreach ($result->quiz->questions as $question) {
-            $maxScore += $question->options->max('points') ?? 3;
+        // Use the snapshotted max_score if present; otherwise compute once and lock it in
+        if (!is_null($result->max_score) && $result->max_score > 0) {
+            $maxScore = $result->max_score;
+        } else {
+            $maxScore = 0;
+            foreach ($result->quiz->questions as $question) {
+                $maxScore += $question->options->max('points') ?? 3;
+            }
+            $result->max_score = $maxScore;
+            $result->save();
         }
 
-        // Only generate once if this legacy row had no ai_summary stored yet
         if (empty($result->ai_summary)) {
             $generated = $this->geminiService->generateSummary(
                 $result->quiz->title,

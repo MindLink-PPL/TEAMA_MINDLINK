@@ -16,6 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->foreignId('quiz_id')->constrained('quiz_catalog')->onDelete('cascade');
             $table->integer('total_score');
+            $table->integer('max_score')->nullable();
             $table->string('distress_level');
             $table->text('ai_summary')->nullable();
             $table->timestamps();

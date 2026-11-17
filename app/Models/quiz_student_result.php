@@ -16,6 +16,7 @@ class Quiz_Student_Result extends Model
         'user_id',
         'quiz_id',
         'total_score',
+        'max_score',
         'distress_level',
         'ai_summary',
     ];
