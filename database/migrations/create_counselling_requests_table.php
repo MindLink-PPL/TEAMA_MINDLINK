@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('counselling_requests', function (Blueprint $table) {
             $table->id('request_id');
-            $table->unsignedBigInteger('student_id')->nullable(); // Can be linked to users table later
+            $table->unsignedBigInteger('student_id')->nullable();
             $table->string('counsellor_name')->default('Alisa');
-            $table->text('concern'); // Description of problem/concerns (PBI-09)
+            $table->text('concern');
             $table->text('goals')->nullable();
             $table->string('appointment_date')->default('2026-10-21');
             $table->string('appointment_time')->default('10:00');
             $table->string('appointment_mode')->default('In person');
-            $table->string('status')->default('Pending'); // Pending, Approved, Draft, Completed
+            $table->string('status')->default('Pending');
+            $table->text('counsellor_notes')->nullable();
             $table->timestamps();
         });
     }

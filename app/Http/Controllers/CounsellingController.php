@@ -11,8 +11,6 @@ class CounsellingController extends Controller
     public function create()
     {
         $counsellors = Counsellor::all();
-
-        // Fetch all active bookings to grey out taken time slots dynamically
         $bookedSlots = CounsellingRequest::whereIn('status', ['Under Review', 'Approved'])
             ->get(['counsellor_name', 'appointment_date', 'appointment_time']);
 
@@ -42,8 +40,6 @@ class CounsellingController extends Controller
         ]);
 
         $counsellor = Counsellor::findOrFail($validated['counsellor_id']);
-
-        // Prevent double-booking on the backend
         $alreadyBooked = CounsellingRequest::where('counsellor_name', $counsellor->name)
             ->where('appointment_date', $validated['appointment_date'])
             ->where('appointment_time', $validated['appointment_time'])

@@ -36,10 +36,6 @@
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-teal-600 text-xs text-white font-bold">C</span>
                         Counselling
                     </a>
-                    <a href="{{ route('counsellor.dashboard') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
-                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-amber-400 font-bold">P</span>
-                        Counsellor Portal &rarr;
-                    </a>
                 </nav>
             </div>
 
@@ -56,7 +52,6 @@
             <header class="bg-slate-50 border-b border-slate-200 px-8 py-5 flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-slate-900">Counselling Request</h2>
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('counsellor.dashboard') }}" class="text-xs font-semibold text-teal-700 hover:underline">Switch to Counsellor View &rarr;</a>
                     <div class="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
                         Student portal
                     </div>
@@ -121,7 +116,6 @@
                     
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
                         
-                        <!-- STEP 1 -->
                         <template x-if="step === 1">
                             <div class="space-y-4">
                                 <div>
@@ -156,7 +150,6 @@
                             </div>
                         </template>
 
-                        <!-- STEP 2 -->
                         <template x-if="step === 2">
                             <div class="space-y-4">
                                 <div>
@@ -196,7 +189,6 @@
                             </div>
                         </template>
 
-                        <!-- STEP 3 -->
                         <template x-if="step === 3">
                             <div class="space-y-5">
                                 <div>
@@ -280,7 +272,6 @@
                             </div>
                         </template>
 
-                        <!-- STEP 4 -->
                         <template x-if="step === 4">
                             <div class="space-y-4">
                                 <div>

@@ -9,7 +9,6 @@
 </head>
 <body class="bg-slate-50 font-sans antialiased">
     <div class="flex h-screen overflow-hidden" x-data="counsellorDashboard()">
-        <!-- Sidebar -->
         <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
             <div>
                 <div class="p-6 flex items-center space-x-3">
@@ -41,7 +40,6 @@
             </div>
         </aside>
 
-        <!-- Main Content -->
         <main class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center">
                 <div>
@@ -49,7 +47,6 @@
                     <p class="text-xs text-slate-500 mt-0.5">Review incoming student concerns, goals, and determine next steps.</p>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('counselling.request') }}" class="text-xs font-semibold text-teal-700 hover:underline">Switch to Student View &rarr;</a>
                     <div class="bg-teal-50 text-teal-800 border border-teal-200 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm">
                         Total Requests: {{ $requests->count() }}
                     </div>
@@ -73,7 +70,6 @@
                     </div>
                 @endif
 
-                <!-- Status Filter Tabs -->
                 <div class="flex flex-wrap items-center gap-2">
                     <template x-for="tab in ['All', 'Under Review', 'Approved', 'Declined']">
                         <button type="button"
@@ -148,7 +144,6 @@
             </div>
         </main>
 
-        <!-- Review & Assessment Modal -->
             <div x-show="selectedRequest" 
                 x-transition.opacity
                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto py-8" 
@@ -188,7 +183,6 @@
                         </div>
                     </div>
 
-                    <!-- Assessment Notes Section -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
                             Counsellor Assessment / Referral Notes
@@ -204,7 +198,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="pt-2 border-t border-slate-100">
                     <template x-if="isFinalized()">
                         <div class="flex justify-between items-center text-xs">
