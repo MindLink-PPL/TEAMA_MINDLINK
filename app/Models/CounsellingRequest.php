@@ -20,6 +20,7 @@ class CounsellingRequest extends Model
         'appointment_date',
         'appointment_time',
         'appointment_mode',
-        'status'
+        'status',
+        'counsellor_notes',
     ];
 }
