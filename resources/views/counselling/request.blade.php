@@ -32,13 +32,13 @@
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">W</span>
                         Wellbeing
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 bg-slate-800 text-white rounded-xl font-medium shadow-sm">
+                    <a href="{{ route('counselling.request') }}" class="flex items-center px-4 py-3 bg-slate-800 text-white rounded-xl font-medium shadow-sm">
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-teal-600 text-xs text-white font-bold">C</span>
                         Counselling
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
-                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">N</span>
-                        Notifications
+                    <a href="{{ route('counsellor.dashboard') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-amber-400 font-bold">P</span>
+                        Counsellor Portal &rarr;
                     </a>
                 </nav>
             </div>
@@ -55,12 +55,26 @@
         <main class="flex-1 flex flex-col overflow-y-auto">
             <header class="bg-slate-50 border-b border-slate-200 px-8 py-5 flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-slate-900">Counselling Request</h2>
-                <div class="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
-                    Student portal
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('counsellor.dashboard') }}" class="text-xs font-semibold text-teal-700 hover:underline">Switch to Counsellor View &rarr;</a>
+                    <div class="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
+                        Student portal
+                    </div>
                 </div>
             </header>
 
             <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+                @if ($errors->any())
+                    <div class="bg-red-50 border border-red-200 text-red-800 px-5 py-4 rounded-xl text-sm shadow-sm space-y-1">
+                        <p class="font-bold">Submission Failed — Please fix the following error(s):</p>
+                        <ul class="list-disc pl-5 text-xs space-y-0.5">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 @if(session('success'))
                     <div class="bg-teal-50 border border-teal-200 text-teal-800 px-5 py-4 rounded-xl text-sm font-medium shadow-sm flex items-center justify-between">
                         <span>{{ session('success') }}</span>
@@ -96,31 +110,53 @@
 
                 <form id="counsellingForm" action="{{ route('counselling.store') }}" method="POST" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     @csrf
+
+                    <input type="hidden" name="concern" :value="concern">
+                    <input type="hidden" name="goals" :value="goals">
+                    <input type="hidden" name="consent_agreed" :value="consentAgreed ? '1' : ''">
+                    <input type="hidden" name="counsellor_id" :value="selectedCounsellorId">
+                    <input type="hidden" name="appointment_mode" :value="appointmentMode">
+                    <input type="hidden" name="appointment_date" :value="selectedDate">
+                    <input type="hidden" name="appointment_time" :value="selectedTime">
                     
                     <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-6">
                         
+                        <!-- STEP 1 -->
                         <template x-if="step === 1">
                             <div class="space-y-4">
                                 <div>
                                     <h4 class="text-lg font-bold text-slate-900">Step 1: Describe your concern</h4>
-                                    <p class="text-xs text-slate-500 mt-1">Please provide details regarding your concern and optional goals.</p>
+                                    <p class="text-xs text-slate-500 mt-1">Please provide details regarding your concern (10–1000 characters) and optional goals.</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Concern Description *</label>
-                                    <textarea name="concern" rows="3" x-model="concern" required class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-teal-600 text-slate-800" placeholder="Describe what you are currently going through..."></textarea>
+                                    <textarea rows="3" maxlength="1000" x-model="concern" @input="stepError = ''" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-teal-600 text-slate-800" placeholder="Describe what you are currently going through..."></textarea>
+                                    <div class="flex justify-between items-center mt-1 text-[11px]">
+                                        <span :class="concern.trim().length >= 10 ? 'text-teal-600 font-medium' : 'text-slate-400'">
+                                            <span x-text="concern.trim().length"></span> / 10 min characters
+                                        </span>
+                                        <span class="text-slate-400">
+                                            <span x-text="concern.length"></span> / 1000 max
+                                        </span>
+                                    </div>
+                                    <p x-show="stepError" x-text="stepError" class="text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"></p>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Counselling Goals (Optional)</label>
-                                    <textarea name="goals" rows="2" x-model="goals" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-teal-600 text-slate-800" placeholder="What do you hope to achieve from this session? (Optional)"></textarea>
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Counselling Goals (Optional)</label>
+                                        <span class="text-[11px] text-slate-400"><span x-text="goals.length"></span> / 500 max</span>
+                                    </div>
+                                    <textarea rows="2" maxlength="500" x-model="goals" class="w-full rounded-xl border border-slate-300 p-3 text-sm focus:ring-2 focus:ring-teal-600 text-slate-800" placeholder="What do you hope to achieve from this session? (Optional)"></textarea>
                                 </div>
                                 <div class="pt-2 flex justify-end">
-                                    <button type="button" :disabled="!concern.trim()" @click="if(concern.trim()) step = 2" :class="concern.trim() ? 'bg-teal-600 hover:bg-teal-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'" class="text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm">
+                                    <button type="button" @click="validateStep1()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
                                         Continue to Consent &rarr;
                                     </button>
                                 </div>
                             </div>
                         </template>
 
+                        <!-- STEP 2 -->
                         <template x-if="step === 2">
                             <div class="space-y-4">
                                 <div>
@@ -145,24 +181,27 @@
                                 </div>
 
                                 <label class="flex items-start space-x-3 cursor-pointer pt-2">
-                                    <input type="checkbox" x-model="consentAgreed" class="mt-0.5 w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
+                                    <input type="checkbox" x-model="consentAgreed" @change="stepError = ''" class="mt-0.5 w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500">
                                     <span class="text-xs font-medium text-slate-800">I have carefully read, understood, and accept the Informed Consent Agreement and Privacy Boundaries. *</span>
                                 </label>
 
+                                <p x-show="stepError" x-text="stepError" class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"></p>
+
                                 <div class="pt-3 flex justify-between">
-                                    <button type="button" @click="step = 1" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition">Back</button>
-                                    <button type="button" :disabled="!consentAgreed" @click="if(consentAgreed) step = 3" :class="consentAgreed ? 'bg-teal-600 hover:bg-teal-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'" class="text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm">
+                                    <button type="button" @click="stepError = ''; step = 1" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50 transition">Back</button>
+                                    <button type="button" @click="validateStep2()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
                                         Continue to Schedule &rarr;
                                     </button>
                                 </div>
                             </div>
                         </template>
 
+                        <!-- STEP 3 -->
                         <template x-if="step === 3">
                             <div class="space-y-5">
                                 <div>
                                     <h4 class="text-lg font-bold text-slate-900">Choose an available time & format</h4>
-                                    <p class="text-xs text-slate-500 mt-1">Select your preferred counsellor, format, date, and time slot.</p>
+                                    <p class="text-xs text-slate-500 mt-1">Select your preferred counsellor, format, date, and available time slot.</p>
                                 </div>
 
                                 <div class="space-y-1.5">
@@ -178,18 +217,21 @@
                                 </div>
 
                                 <div class="space-y-1.5">
-                                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Counsellor *</label>
-                                    <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+                                    <div class="flex justify-between items-center">
+                                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Counsellor *</label>
+                                        <span class="text-[11px] text-slate-400">Click again to deselect</span>
+                                    </div>
+                                    <div class="space-y-2 max-h-40 overflow-y-auto pr-1">
                                         @foreach($counsellors as $c)
-                                            <div @click="selectedCounsellorId = '{{ $c->counsellor_id }}'; selectedCounsellorName = '{{ $c->name }}'" 
+                                            <div @click="toggleCounsellor('{{ $c->counsellor_id }}', '{{ $c->name }}')" 
                                                  :class="selectedCounsellorId == '{{ $c->counsellor_id }}' ? 'border-teal-600 bg-teal-50/50 ring-2 ring-teal-600/20' : 'border-slate-200 bg-slate-50 hover:border-slate-300'" 
-                                                 class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition">
+                                                 class="border rounded-xl p-3 flex items-center justify-between cursor-pointer transition select-none">
                                                 <div class="flex items-center space-x-3 text-slate-800 font-medium">
                                                     <span class="text-teal-600 font-bold text-sm">{{ $c->name }}</span> 
                                                     <span class="text-slate-300">•</span> 
                                                     <span class="text-slate-600 text-xs">{{ $c->specialization }}</span>
                                                 </div>
-                                                <div :class="selectedCounsellorId == '{{ $c->counsellor_id }}' ? 'border-teal-600 bg-teal-600' : 'border-slate-300 bg-white'" class="w-4 h-4 rounded-full border flex items-center justify-center">
+                                                <div :class="selectedCounsellorId == '{{ $c->counsellor_id }}' ? 'border-teal-600 bg-teal-600' : 'border-slate-300 bg-white'" class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0">
                                                     <div x-show="selectedCounsellorId == '{{ $c->counsellor_id }}'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
                                                 </div>
                                             </div>
@@ -200,28 +242,45 @@
                                 <div class="space-y-1.5">
                                     <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Date *</label>
                                     <div class="relative">
-                                        <input type="date" x-model="selectedDate" min="{{ date('Y-m-d') }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600">
+                                        <input type="date" x-model="selectedDate" @input="onDateOrCounsellorChange()" @change="onDateOrCounsellorChange()" min="{{ date('Y-m-d') }}" class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600">
                                     </div>
                                 </div>
 
                                 <div class="space-y-1.5">
-                                    <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Time Slot *</label>
+                                    <div class="flex justify-between items-center">
+                                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider">Select Time Slot *</label>
+                                        <span class="text-[11px] text-slate-400">Greyed slots are already booked</span>
+                                    </div>
                                     <div class="grid grid-cols-4 gap-2">
                                         <template x-for="time in ['09:00', '10:00', '13:30', '15:00']">
-                                            <button type="button" @click="selectedTime = time" :class="selectedTime === time ? 'bg-teal-600 text-white shadow-sm' : 'border border-teal-600 text-teal-700 bg-white hover:bg-teal-50'" class="py-2 rounded-xl font-semibold text-sm transition" x-text="time"></button>
+                                            <button type="button" 
+                                                :disabled="isSlotBooked(time)"
+                                                @click="toggleTime(time)" 
+                                                :class="isSlotBooked(time) 
+                                                    ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed line-through opacity-75' 
+                                                    : (selectedTime === time 
+                                                        ? 'bg-teal-600 text-white shadow-sm cursor-pointer' 
+                                                        : 'border border-teal-600 text-teal-700 bg-white hover:bg-teal-50 cursor-pointer')" 
+                                                class="py-2 rounded-xl font-semibold text-sm transition flex flex-col items-center justify-center">
+                                                <span x-text="time"></span>
+                                                <span x-show="isSlotBooked(time)" class="text-[9px] font-bold uppercase tracking-wider text-slate-400 no-underline">Booked</span>
+                                            </button>
                                         </template>
                                     </div>
                                 </div>
 
+                                <p x-show="stepError" x-text="stepError" class="text-xs font-semibold text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"></p>
+
                                 <div class="pt-2 flex justify-between">
-                                    <button type="button" @click="step = 2" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium">Back</button>
-                                    <button type="button" :disabled="!selectedCounsellorId || !selectedDate" @click="if(selectedCounsellorId && selectedDate) step = 4" :class="(selectedCounsellorId && selectedDate) ? 'bg-teal-600 hover:bg-teal-700 cursor-pointer' : 'bg-slate-300 cursor-not-allowed'" class="text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm">
+                                    <button type="button" @click="stepError = ''; step = 2" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium">Back</button>
+                                    <button type="button" @click="validateStep3()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm cursor-pointer">
                                         Review Request &rarr;
                                     </button>
                                 </div>
                             </div>
                         </template>
 
+                        <!-- STEP 4 -->
                         <template x-if="step === 4">
                             <div class="space-y-4">
                                 <div>
@@ -230,16 +289,16 @@
                                 </div>
 
                                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 text-sm text-slate-700">
-                                    <div>
-                                        <span class="font-bold text-xs uppercase text-slate-400 block">Concern:</span>
-                                        <p x-text="concern" class="mt-0.5 text-slate-900 font-medium"></p>
-                                    </div>
-                                    <template x-if="goals">
                                         <div>
-                                            <span class="font-bold text-xs uppercase text-slate-400 block">Counselling Goals:</span>
-                                            <p x-text="goals" class="mt-0.5 text-slate-900 font-medium"></p>
+                                            <span class="font-bold text-xs uppercase text-slate-400 block">Concern:</span>
+                                            <p x-text="concern" class="mt-0.5 text-slate-900 font-medium break-all"></p> <!-- Added break-all -->
                                         </div>
-                                    </template>
+                                        <template x-if="goals">
+                                            <div>
+                                                <span class="font-bold text-xs uppercase text-slate-400 block">Counselling Goals:</span>
+                                                <p x-text="goals" class="mt-0.5 text-slate-900 font-medium break-all"></p> <!-- Added break-all -->
+                                            </div>
+                                        </template>
                                     <div>
                                         <span class="font-bold text-xs uppercase text-slate-400 block">Chosen Counsellor:</span>
                                         <p x-text="selectedCounsellorName" class="mt-0.5 text-teal-700 font-bold"></p>
@@ -254,14 +313,6 @@
                                     </div>
                                 </div>
 
-                                <!-- REAL FORM INPUTS (Ensures values are sent to Laravel) -->
-                                <input type="hidden" name="concern" x-model="concern">
-                                <input type="hidden" name="goals" x-model="goals">
-                                <input type="hidden" name="counsellor_id" x-model="selectedCounsellorId">
-                                <input type="hidden" name="appointment_mode" x-model="appointmentMode">
-                                <input type="hidden" name="appointment_date" x-model="selectedDate">
-                                <input type="hidden" name="appointment_time" x-model="selectedTime">
-
                                 <div class="pt-4 flex justify-between">
                                     <button type="button" @click="step = 3" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium">Back</button>
                                     <button type="button" @click="showModal = true" class="bg-teal-600 hover:bg-teal-700 text-white font-medium px-6 py-2.5 rounded-xl transition shadow-sm cursor-pointer flex items-center space-x-2">
@@ -272,12 +323,12 @@
                         </template>
                     </div>
 
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5 flex flex-col justify-between">
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5 flex flex-col justify-between overflow-hidden"> <!-- Added overflow-hidden -->
                         <div class="space-y-4">
                             <h4 class="text-lg font-bold text-slate-900">Your request</h4>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Concern</p>
-                                <p class="text-sm font-medium text-slate-800 mt-0.5 truncate" x-text="concern || 'Pending input...'"></p>
+                                <p class="text-sm font-medium text-slate-800 mt-0.5 break-all" x-text="concern || 'Pending input...'"></p> <!-- Changed truncate to break-all -->
                             </div>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Consent</p>
@@ -285,11 +336,11 @@
                             </div>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Format & Counsellor</p>
-                                <p class="text-sm font-medium text-teal-700 mt-0.5"><span x-text="appointmentMode"></span> with <span x-text="selectedCounsellorName || 'None'"></span></p>
+                                <p class="text-sm font-medium text-teal-700 mt-0.5"><span x-text="appointmentMode"></span> with <span x-text="selectedCounsellorName || 'None selected'"></span></p>
                             </div>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Schedule</p>
-                                <p class="text-sm font-medium text-slate-800 mt-0.5" x-text="formattedDate ? formattedDate + ', ' + selectedTime : 'Select a date'"></p>
+                                <p class="text-sm font-medium text-slate-800 mt-0.5" x-text="(formattedDate || 'No date') + ', ' + (selectedTime || 'No time')"></p>
                             </div>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Status</p>
@@ -322,7 +373,7 @@
                 <div class="space-y-2">
                     <h3 class="text-xl font-bold text-slate-900">Request Submitted for Review</h3>
                     <p class="text-xs text-slate-500 leading-relaxed px-2">
-                        Your counselling request has been sent to <span class="font-bold text-teal-700" x-text="selectedCounsellorName"></span>. 
+                        Your counselling request will be sent to <span class="font-bold text-teal-700" x-text="selectedCounsellorName"></span>. 
                         Our team will review your details shortly. We’ll notify you via your student portal and email once your schedule is confirmed!
                     </p>
                 </div>
@@ -350,16 +401,99 @@
     <script>
         function counsellingWizard() {
             return {
-                step: 1,
+                step: {{ $errors->any() ? 4 : 1 }},
+                stepError: '',
                 showModal: false,
-                concern: '',
-                goals: '',
-                consentAgreed: false,
-                appointmentMode: 'In person',
-                selectedCounsellorId: '{{ $counsellors->first()->counsellor_id ?? "" }}',
-                selectedCounsellorName: '{{ $counsellors->first()->name ?? "" }}',
-                selectedDate: '{{ date("Y-m-d") }}',
-                selectedTime: '10:00',
+                todayDate: '{{ date("Y-m-d") }}',
+                bookedSlots: @json($bookedSlots),
+                concern: @json(old('concern', '')),
+                goals: @json(old('goals', '')),
+                consentAgreed: {{ old('consent_agreed') ? 'true' : 'false' }},
+                appointmentMode: @json(old('appointment_mode', 'In person')),
+                selectedCounsellorId: '{{ old("counsellor_id", "") }}',
+                selectedCounsellorName: '',
+                selectedDate: '{{ old("appointment_date", date("Y-m-d")) }}',
+                selectedTime: '{{ old("appointment_time", "") }}',
+
+                isSlotBooked(time) {
+                    if (!this.selectedCounsellorName || !this.selectedDate) return false;
+                    return this.bookedSlots.some(slot =>
+                        slot.counsellor_name === this.selectedCounsellorName &&
+                        slot.appointment_date === this.selectedDate &&
+                        slot.appointment_time === time
+                    );
+                },
+
+                onDateOrCounsellorChange() {
+                    this.stepError = '';
+                    if (this.selectedTime && this.isSlotBooked(this.selectedTime)) {
+                        this.selectedTime = '';
+                    }
+                },
+
+                toggleCounsellor(id, name) {
+                    if (this.selectedCounsellorId == id) {
+                        this.selectedCounsellorId = '';
+                        this.selectedCounsellorName = '';
+                    } else {
+                        this.selectedCounsellorId = id;
+                        this.selectedCounsellorName = name;
+                    }
+                    this.onDateOrCounsellorChange();
+                },
+
+                toggleTime(time) {
+                    if (this.isSlotBooked(time)) return;
+                    this.stepError = '';
+                    this.selectedTime = (this.selectedTime === time) ? '' : time;
+                },
+
+                validateStep1() {
+                    if (!this.concern.trim()) {
+                        this.stepError = 'Please describe your concern before continuing.';
+                        return;
+                    }
+                    if (this.concern.trim().length < 10) {
+                        this.stepError = 'Your concern description must be at least 10 characters.';
+                        return;
+                    }
+                    this.stepError = '';
+                    this.step = 2;
+                },
+
+                validateStep2() {
+                    if (!this.consentAgreed) {
+                        this.stepError = 'You must accept the Informed Consent Agreement (UU PDP) to proceed.';
+                        return;
+                    }
+                    this.stepError = '';
+                    this.step = 3;
+                },
+
+                validateStep3() {
+                    if (!this.selectedCounsellorId) {
+                        this.stepError = 'Please select a counsellor before continuing.';
+                        return;
+                    }
+                    if (!this.selectedDate) {
+                        this.stepError = 'Please select an appointment date.';
+                        return;
+                    }
+                    if (this.selectedDate < this.todayDate) {
+                        this.stepError = 'Appointment date cannot be in the past.';
+                        return;
+                    }
+                    if (!this.selectedTime) {
+                        this.stepError = 'Please select an available time slot.';
+                        return;
+                    }
+                    if (this.isSlotBooked(this.selectedTime)) {
+                        this.stepError = 'This time slot is already booked. Please choose another.';
+                        return;
+                    }
+                    this.stepError = '';
+                    this.step = 4;
+                },
                 
                 get formattedDate() {
                     if (!this.selectedDate) return '';
