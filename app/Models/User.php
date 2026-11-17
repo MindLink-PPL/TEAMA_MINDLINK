@@ -3,6 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -10,17 +14,34 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role',
+        'certificate_path',
+        'verification_status',
+        'rejection_reason',
+        'role_id'
+      
     ];
+
 
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -33,5 +54,129 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Article::class, 'saved_articles', 'user_id', 'article_id')
                     ->withPivot('saved_at');
+    /**
+     * Get the role that this user belongs to.
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * Get the wellbeing check-ins recorded by this student.
+     */
+    public function wellbeingCheckins(): HasMany
+    {
+        return $this->hasMany(WellbeingCheckin::class);
+    }
+
+    /**
+     * Get the counselling requests / appointments for this student.
+     */
+    public function counsellingRequests(): HasMany
+    {
+        return $this->hasMany(CounsellingRequest::class);
+    }
+
+    /**
+     * Get the support referrals recorded for this student.
+     */
+    public function studentReferrals(): HasMany
+    {
+        return $this->hasMany(StudentReferral::class, 'user_id');
+    }
+
+    /**
+     * Check if the user has a specific role or one of given roles.
+     */
+    public function hasRole(string|array $roles): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        $roles = is_array($roles) ? $roles : [$roles];
+        $userSlug = $this->role->slug;
+
+        foreach ($roles as $role) {
+            if ($userSlug === $role) {
+                return true;
+            }
+
+            if (in_array($role, ['student', 'user'], true) && in_array($userSlug, ['student', 'user'], true)) {
+                return true;
+            }
+
+            if (in_array($role, ['counsellor', 'manager'], true) && in_array($userSlug, ['counsellor', 'manager'], true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the user is an administrator.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
+    }
+
+    /**
+     * Check if the user is a counsellor / staff member.
+     */
+    public function isCounsellor(): bool
+    {
+        return $this->hasRole(['counsellor', 'manager']);
+    }
+
+    /**
+     * Check if the user is a student.
+     */
+    public function isStudent(): bool
+    {
+        return $this->hasRole(['student', 'user']);
+    }
+
+    /**
+     * Get the display portal name for the header pill in Figma design.
+     */
+    public function getPortalNameAttribute(): string
+    {
+        if ($this->isAdmin()) {
+            return 'Admin portal';
+        }
+
+        if ($this->isCounsellor()) {
+            return 'Counsellor portal';
+        }
+
+        return 'Student portal';
+    }
+
+    /**
+     * Check if the user has a specific permission via their role.
+     */
+    public function hasPermission(string $permissionSlug): bool
+    {
+        if (! $this->role) {
+            return false;
+        }
+
+        // Administrators have all permissions
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        return $this->role->permissions->contains('slug', $permissionSlug);
+    }
+
+    /**
+     * Get all permissions associated with the user's role.
+     */
+    public function getPermissionsAttribute(): Collection
+    {
+        return $this->role ? $this->role->permissions : new Collection();
     }
 }

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1b3a57">
+  <title>MindLink | Counselling support</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <a class="brand" href="#dashboard" aria-label="MindLink home">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span><strong>MindLink</strong><small>Support platform</small></span>
+      </a>
+      <div class="nav-label">MENU</div>
+      <nav id="main-nav"></nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-note">
+        <span class="note-spark" aria-hidden="true">✳</span>
+        <p>A little support can make a big difference.</p>
+      </div>
+      <button class="profile-switch" id="role-switch" type="button" aria-label="Switch between student and counsellor roles">
+        <span class="avatar" id="profile-avatar">A</span>
+        <span class="profile-copy">
+          <strong id="profile-name">Ava Chen</strong>
+          <small id="profile-role">Student account</small>
+        </span>
+        <span class="switch-icon" aria-hidden="true">⇄</span>
+      </button>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumbs">
+          <span>MindLink</span>
+          <span class="crumb-slash">/</span>
+          <strong id="page-crumb">Dashboard</strong>
+        </div>
+        <div class="topbar-actions">
+          <span class="portal-pill">
+            <span class="online-dot" aria-hidden="true"></span>
+            <span id="portal-label">Student portal</span>
+          </span>
+          <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme">
+            <span id="theme-icon" aria-hidden="true">☾</span>
+          </button>
+          <button class="mobile-role" id="mobile-role-switch" type="button">Switch role ⇄</button>
+        </div>
+      </header>
+
+      <div class="content" id="content" tabindex="-1"></div>
+      <footer class="site-footer">
+        <span>MindLink · Your wellbeing matters</span>
+        <span>MindLink is not an emergency service.</span>
+      </footer>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
