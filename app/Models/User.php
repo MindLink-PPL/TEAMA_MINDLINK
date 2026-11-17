@@ -50,6 +50,10 @@ class User extends Authenticatable
         ];
     }
 
+    public function savedArticles()
+    {
+        return $this->belongsToMany(Article::class, 'saved_articles', 'user_id', 'article_id')
+                    ->withPivot('saved_at');
     /**
      * Get the role that this user belongs to.
      */

@@ -9,6 +9,13 @@ use Tests\DuskTestCase;
 class ExampleTest extends DuskTestCase
 {
     /**
+     * A basic browser test example.
+     */
+    public function test_basic_example(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/')
+                ->waitForText("Let's get started");
      * Test that MindLink UI loads correctly on the home page.
      */
     public function test_mindlink_portal_loads_correctly(): void

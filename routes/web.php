@@ -3,6 +3,8 @@
 use App\Http\Controllers\CounsellorController;
 use App\Http\Controllers\CounsellingController;
 
+use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\Admin\AdminArticleController;
 use App\Http\Controllers\Admin\RoleManagementController;
 use App\Http\Controllers\Counsellor\CounsellorPortalController;
 use App\Http\Controllers\ProfileController;
@@ -12,6 +14,17 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\Admin\CounsellorVerificationController;
 use App\Http\Controllers\InformedConsentController;
+
+
+// mental health literacy
+    Route::get('/learn', [ArticleController::class, 'index'])->name('articles.index');
+    Route::get('/learn/saved', [ArticleController::class, 'saved'])->name('articles.saved');
+    Route::get('/learn/{article}', [ArticleController::class, 'show'])->name('articles.show');
+    Route::post('/learn/{article}/save', [ArticleController::class, 'toggleSave'])->name('articles.toggleSave');
+
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::resource('articles', AdminArticleController::class)->except(['show']);
+
 
 // Home redirect
 Route::get('/', function () {
