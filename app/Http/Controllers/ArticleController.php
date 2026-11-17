@@ -26,13 +26,37 @@ class ArticleController extends Controller
         }
 
         $articles = $query->get();
+        $savedArticleIds = auth()->user()->savedArticles()->pluck('articles.id')->toArray();
 
-        return view('articles.index', compact('articles', 'categories'));
+        return view('articles.index', compact('articles', 'categories', 'savedArticleIds'));
     }
 
     public function show(Article $article)
     {
         $article->load('category');
-        return view('articles.show', compact('article'));
+        $isSaved = auth()->user()->savedArticles()->where('article_id', $article->id)->exists();
+
+        return view('articles.show', compact('article', 'isSaved'));
+    }
+
+    public function toggleSave(Article $article)
+    {
+        $user = auth()->user();
+
+        if ($user->savedArticles()->where('article_id', $article->id)->exists()) {
+            $user->savedArticles()->detach($article->id);
+            $message = 'Article removed from saved list.';
+        } else {
+            $user->savedArticles()->attach($article->id, ['saved_at' => now()]);
+            $message = 'Article saved for later.';
+        }
+
+        return back()->with('status', $message);
+    }
+
+    public function saved()
+    {
+        $articles = auth()->user()->savedArticles()->with('category')->orderByPivot('saved_at', 'desc')->get();
+        return view('articles.saved', compact('articles'));
     }
 }
