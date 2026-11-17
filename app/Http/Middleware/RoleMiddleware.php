@@ -8,12 +8,24 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role): Response
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!$request->user() || $request->user()->role !== $role) {
-            abort(403, 'You are not authorized to access this page.');
+        if (! $request->user() || ! $request->user()->role) {
+            abort(403, 'Unauthorized.');
         }
 
-        return $next($request);
+        foreach ($roles as $role) {
+            if ($request->user()->hasRole($role)) {
+                return $next($request);
+            }
+        }
+
+        abort(403, 'You do not have permission to access this page.');
     }
 }
+

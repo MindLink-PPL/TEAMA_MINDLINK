@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindLink — Test Cases (Daniel Adrian Tab Continuation)</title>
+    <style>
+        :root {
+            --navy: #0f2a4a;
+            --teal: #1c9c8c;
+            --teal-dark: #157a6e;
+            --mint: #e6f5f0;
+            --peach: #fff3e6;
+            --orange: #f58a42;
+            --bg: #f4f7fa;
+            --border: #dbe2ea;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: #1e293b;
+            padding: 24px;
+        }
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header-card {
+            background: var(--navy);
+            color: #fff;
+            border-radius: 16px;
+            padding: 24px 28px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(15, 42, 74, 0.12);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 20px;
+            color: #fff;
+        }
+        .header-card h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .header-card p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-teal {
+            background: var(--teal);
+            color: #fff;
+        }
+        .btn-teal:hover {
+            background: var(--teal-dark);
+        }
+        .btn-white {
+            background: #fff;
+            color: var(--navy);
+        }
+        .btn-white:hover {
+            background: #f1f5f9;
+        }
+        .toolbar {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-pill {
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: #334155;
+            padding: 6px 13px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .filter-pill.active {
+            background: var(--navy);
+            color: #fff;
+            border-color: var(--navy);
+        }
+        .search-input {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+            min-width: 260px;
+        }
+        .table-wrapper {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            box-shadow: 0 2px 6px rgba(15, 42, 74, 0.04);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1350px;
+        }
+        thead th {
+            background: var(--navy);
+            color: #fff;
+            text-align: left;
+            padding: 12px 10px;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-right: 1px solid #1e3f66;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tbody td {
+            padding: 9px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #f1f5f9;
+            vertical-align: top;
+            line-height: 1.45;
+        }
+        tbody tr.case-start td {
+            border-top: 2px solid #cbd5e1;
+            background: #ffffff;
+        }
+        tbody tr.step-continuation td {
+            background: #fcfdfe;
+        }
+        tbody tr:hover td {
+            background: #f0fdf9;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .badge-pos {
+            background: var(--mint);
+            color: var(--teal-dark);
+        }
+        .badge-neg {
+            background: var(--peach);
+            color: #d97706;
+        }
+        .badge-pass {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .badge-pbi {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+        }
+        .case-id {
+            font-family: Consolas, monospace;
+            font-weight: 700;
+            color: var(--navy);
+            white-space: nowrap;
+        }
+        .step-num {
+            font-weight: 700;
+            color: #475569;
+            text-align: center;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--navy);
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header-card">
+        <div class="brand">
+            <div class="brand-badge">M</div>
+            <div>
+                <h1>MindLink — Quality Assurance Test Cases (Daniel Adrian Tab)</h1>
+                <p>Complete Test Case Suite: Login &amp; Authentication (PBI #1–#2) + Role-Based Access Control for Admin, Student &amp; Counsellor (PBI #3–#5)</p>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn btn-teal" onclick="copyForSpreadsheet()">Copy All for Google Sheets / Excel (TSV)</button>
+            <button class="btn btn-white" onclick="downloadCSV()">Download CSV</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="filter-group">
+            <button class="filter-pill active" onclick="filterCases('ALL', this)">All Test Cases (26)</button>
+            <button class="filter-pill" onclick="filterCases('LOGIN', this)">PBI #1 &amp; #2: Login (8)</button>
+            <button class="filter-pill" onclick="filterCases('ADMIN', this)">PBI #3: Admin Role (6)</button>
+            <button class="filter-pill" onclick="filterCases('STUDENT', this)">PBI #4: Student Role (6)</button>
+            <button class="filter-pill" onclick="filterCases('COUNSELLOR', this)">PBI #5: Counsellor Role (6)</button>
+        </div>
+        <input type="text" id="searchBox" class="search-input" placeholder="Search Case ID, scenario, or expected result..." oninput="searchTable()">
+    </div>
+
+    <div class="table-wrapper">
+        <table id="testCaseTable">
+            <thead>
+                <tr>
+                    <th style="width: 75px;">PBI ID</th>
+                    <th style="width: 145px;">Case ID</th>
+                    <th style="width: 190px;">Test Scenario</th>
+                    <th style="width: 85px;">Type</th>
+                    <th style="width: 220px;">Test Case</th>
+                    <th style="width: 180px;">Pre Condition</th>
+                    <th style="width: 55px;">Steps</th>
+                    <th style="width: 240px;">Steps Description</th>
+                    <th style="width: 250px;">Expected Result</th>
+                    <th style="width: 90px;">Status (Pass/Fail)</th>
+                    <th style="width: 200px;">Keterangan</th>
+                    <th style="width: 140px;">Evidence</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div id="toast" class="toast">Copied to clipboard! Paste directly into Google Sheets (Ctrl+V).</div>
+
+<script>
+const testCases = [
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #1',
+        caseId: 'TC.Login.001',
+        scenario: 'Testing login functionality',
+        type: 'Positive',
+        testCase: 'User login menggunakan email dan password yang sudah ter-registrasi',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Login berhasil dan mengarahkan user sesuai role ke Dashboard',
+        evidence: 'Screenshot halaman Login & Dashboard',
+        steps: [
+            { num: 1, desc: 'Launch the app and open /login.', expected: 'Login screen displayed. There are email and password fields.', status: 'Pass' },
+            { num: 2, desc: 'Input a registered email (admin@gmail.com).', expected: 'Email field can be typed and uses valid email format.', status: 'Pass' },
+            { num: 3, desc: 'Input registered password (12345).', expected: 'Password field can be typed and masked using dot format.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'User is authenticated and redirected to the Dashboard screen.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.002',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'User login menggunakan email dan password yang salah',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Sistem menolak login dan menampilkan pesan validasi error',
+        evidence: 'Screenshot pesan error "These credentials do not match our records."',
+        steps: [
+            { num: 1, desc: 'Launch the app and navigate to /login.', expected: 'Login screen displayed with email and password inputs.', status: 'Pass' },
+            { num: 2, desc: 'Input an unregistered email (wrong@mindlink.com).', expected: 'Email field accepts input in email format.', status: 'Pass' },
+            { num: 3, desc: 'Input an incorrect password (wrongpass).', expected: 'Password field masks the input characters.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'Gagal login dan ditampilkan pesan bahwa email dan password yang diinput tidak sesuai ("These credentials do not match our records.").', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.003',
+        scenario: 'Testing login functionality',
+        type: 'Positive',
+        testCase: 'User attempts logs in with a registered account',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Akun terdaftar berhasil masuk ke portal masing-masing',
+        evidence: 'Screenshot Dashboard setelah login',
+        steps: [
+            { num: 1, desc: 'Launch the app and navigate to /login.', expected: 'Login screen displayed. There are email and password fields.', status: 'Pass' },
+            { num: 2, desc: 'Input a registered email (student@gmail.com).', expected: 'Email field can be typed and using email format.', status: 'Pass' },
+            { num: 3, desc: 'Input registered password (12345).', expected: 'Password field can be typed and using dot format.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'User can log in and is redirected to Dashboard screen.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.004',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'User attempts logs in with a wrong email and password and wrong format',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Validasi HTML5 & Laravel menolak format email tidak valid',
+        evidence: 'Screenshot peringatan format email tidak valid',
+        steps: [
+            { num: 1, desc: 'Launch the app and open /login.', expected: 'Login screen displayed.', status: 'Pass' },
+            { num: 2, desc: 'Input invalid email format without "@" (e.g. notanemail).', expected: 'Field displays typed string.', status: 'Pass' },
+            { num: 3, desc: 'Input a random password (123).', expected: 'Password field masks input.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'Form submission is blocked and displays email format validation error.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.005',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'User attempts to logs in with a wrong email and password but right format',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Sistem menolak kredensial yang tidak terdaftar meskipun format email valid',
+        evidence: 'Screenshot pesan error kredensial tidak cocok',
+        steps: [
+            { num: 1, desc: 'Launch the app and open /login.', expected: 'Login screen displayed.', status: 'Pass' },
+            { num: 2, desc: 'Input a valid-format email (unknown.user@gmail.com).', expected: 'Email field accepts valid email format.', status: 'Pass' },
+            { num: 3, desc: 'Input wrong password (wrong12345).', expected: 'Password field masks input in dot format.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'Login fails and returns validation message "These credentials do not match our records."', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.006',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'User attempts to log in using empty field inputs',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Field required mencegah submit form kosong',
+        evidence: 'Screenshot validasi field wajib diisi',
+        steps: [
+            { num: 1, desc: 'Launch the app and open /login.', expected: 'Login screen displayed with empty fields.', status: 'Pass' },
+            { num: 2, desc: 'Leave the Email field blank.', expected: 'Email field remains empty.', status: 'Pass' },
+            { num: 3, desc: 'Leave the Password field blank.', expected: 'Password field remains empty.', status: 'Pass' },
+            { num: 4, desc: 'Tap Log in button.', expected: 'Browser/server blocks submission and prompts that Email and Password fields are required.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.007',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'Brute Force Login attempt',
+        preCondition: 'User successfully accesses the web page',
+        keterangan: 'Percobaan login berulang kali dicatat oleh RateLimiter',
+        evidence: 'Screenshot percobaan login berulang gagal',
+        steps: [
+            { num: 1, desc: 'Open /login page.', expected: 'Login screen displayed.', status: 'Pass' },
+            { num: 2, desc: 'Input registered email (admin@gmail.com).', expected: 'Email field populated.', status: 'Pass' },
+            { num: 3, desc: 'Submit 4 consecutive login attempts with wrong passwords.', expected: 'Each attempt is rejected and increments the rate limiter counter.', status: 'Pass' },
+            { num: 4, desc: 'Verify user remains unauthenticated (guest).', expected: 'Session is not created and user stays on /login.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'LOGIN',
+        pbi: 'PBI #2',
+        caseId: 'TC.Login.008',
+        scenario: 'Testing login functionality',
+        type: 'Negative',
+        testCase: 'Lockout after too many attempts',
+        preCondition: 'User has failed 5 consecutive login attempts',
+        keterangan: 'RateLimiter mengunci sementara setelah >5 percobaan gagal',
+        evidence: 'Screenshot pesan throttle "Too many login attempts"',
+        steps: [
+            { num: 1, desc: 'Open /login page after 5 failed attempts.', expected: 'Login screen displayed.', status: 'Pass' },
+            { num: 2, desc: 'Input email (admin@gmail.com) and password on the 6th attempt.', expected: 'Fields accept input.', status: 'Pass' },
+            { num: 3, desc: 'Tap Log in button.', expected: 'Lockout event triggered by LoginRequest::ensureIsNotRateLimited().', status: 'Pass' },
+            { num: 4, desc: 'Observe lockout error message.', expected: 'System displays "Too many login attempts. Please try again in X seconds."', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.001',
+        scenario: 'Testing Role Access functionality (Admin)',
+        type: 'Positive',
+        testCase: 'Administrator accesses the Administrative Dashboard (PG-06) and Privacy Boundary notice',
+        preCondition: 'User is logged in as Administrator (admin@gmail.com / 12345)',
+        keterangan: 'Dashboard Admin menampilkan metrik layanan tanpa mengekspos catatan konseling pribadi',
+        evidence: 'Screenshot PG-06 Administrative Dashboard',
+        steps: [
+            { num: 1, desc: 'Log in with admin@gmail.com / 12345.', expected: 'Redirected to /dashboard.', status: 'Pass' },
+            { num: 2, desc: 'Verify top header and portal pill.', expected: 'Header shows "Administrative Dashboard" and "Admin portal" pill.', status: 'Pass' },
+            { num: 3, desc: 'Inspect Service Overview cards and Weekly Request Activity chart.', expected: 'Registered users, Active Roles, Permissions count, and bar chart are displayed.', status: 'Pass' },
+            { num: 4, desc: 'Inspect Privacy Boundary card.', expected: 'Displays "Administration sees service data, not counselling notes."', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.002',
+        scenario: 'Testing Role Access functionality (Admin)',
+        type: 'Positive',
+        testCase: 'Administrator views User & Role Management directory and Permission Matrix',
+        preCondition: 'User is logged in as Administrator',
+        keterangan: 'Halaman /admin/users menampilkan daftar akun dan matriks permission',
+        evidence: 'Screenshot halaman User & Role Management',
+        steps: [
+            { num: 1, desc: 'Click "Users & Roles" in the left sidebar (or visit /admin/users).', expected: 'User & Role Management page opens with HTTP 200.', status: 'Pass' },
+            { num: 2, desc: 'Inspect top summary cards.', expected: 'Total accounts, Administrators, Counsellors, and Students counts are shown.', status: 'Pass' },
+            { num: 3, desc: 'Inspect user directory table.', expected: 'Lists users with their current role badge and active permission tags.', status: 'Pass' },
+            { num: 4, desc: 'Scroll to System Role & Permission Matrix.', expected: 'Displays Administrator, Counsellor, and Student roles with their respective permissions.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.003',
+        scenario: 'Testing Role Access functionality (Admin)',
+        type: 'Positive',
+        testCase: 'Administrator updates another user\'s role and permissions reflect immediately',
+        preCondition: 'User is logged in as Administrator on /admin/users',
+        keterangan: 'Perubahan role langsung memperbarui hak akses user tersebut',
+        evidence: 'Screenshot notifikasi sukses update role',
+        steps: [
+            { num: 1, desc: 'Locate "Alex Rivera (Student)" in the User & Role Management table.', expected: 'Current role shows "Student".', status: 'Pass' },
+            { num: 2, desc: 'Select "Counsellor" from the Assign Role dropdown for that user.', expected: 'Dropdown value changes to Counsellor.', status: 'Pass' },
+            { num: 3, desc: 'Click the "Update" button.', expected: 'PATCH request sent to /admin/users/{user}/role.', status: 'Pass' },
+            { num: 4, desc: 'Verify flash message and updated permissions.', expected: 'Success banner appears and user immediately receives counsellor.workspace and related permissions.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.004',
+        scenario: 'Testing Role Access functionality (Admin)',
+        type: 'Negative',
+        testCase: 'Administrator attempts to demote their own Administrator account',
+        preCondition: 'User is logged in as Administrator on /admin/users',
+        keterangan: 'Safeguard keamanan mencegah admin menurunkan role dirinya sendiri',
+        evidence: 'Screenshot pesan error proteksi self-demotion',
+        steps: [
+            { num: 1, desc: 'Navigate to /admin/users.', expected: 'Admin row shows "(You)" badge.', status: 'Pass' },
+            { num: 2, desc: 'Attempt to send PATCH /admin/users/{admin_id}/role with Student role_id.', expected: 'Request is intercepted by RoleManagementController safeguard.', status: 'Pass' },
+            { num: 3, desc: 'Observe response message.', expected: 'Error message: "Security protection: You cannot alter your own Administrator role to prevent lockout."', status: 'Pass' },
+            { num: 4, desc: 'Verify Admin role in database.', expected: 'Admin user remains assigned to the Administrator role.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.005',
+        scenario: 'Testing Role Access functionality (Admin)',
+        type: 'Negative',
+        testCase: 'Non-admin users (Student & Counsellor) attempt to access /admin/users',
+        preCondition: 'User is logged in as Student or Counsellor',
+        keterangan: 'RoleMiddleware memblokir akses ke rute admin dengan HTTP 403',
+        evidence: 'Screenshot halaman 403 Forbidden',
+        steps: [
+            { num: 1, desc: 'Log in as Student (student@gmail.com / 12345).', expected: 'Student Dashboard displayed.', status: 'Pass' },
+            { num: 2, desc: 'Attempt to navigate directly to /admin/users.', expected: 'Server returns HTTP 403 Forbidden ("You do not have permission to access this page.").', status: 'Pass' },
+            { num: 3, desc: 'Log in as Counsellor (counsellor@gmail.com / 12345).', expected: 'Counsellor Workspace displayed.', status: 'Pass' },
+            { num: 4, desc: 'Attempt to navigate directly to /admin/users.', expected: 'Server returns HTTP 403 Forbidden.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'ADMIN',
+        pbi: 'PBI #3',
+        caseId: 'TC.RoleAccess.008',
+        scenario: 'Testing Role Access functionality (Registration Default Role)',
+        type: 'Positive',
+        testCase: 'Newly registered user is automatically assigned the default Student role',
+        preCondition: 'User is a guest on /register',
+        keterangan: 'Registrasi akun baru otomatis mendapat role Student (user)',
+        evidence: 'Screenshot registrasi akun baru masuk ke Student Portal',
+        steps: [
+            { num: 1, desc: 'Open /register page.', expected: 'Registration form displayed.', status: 'Pass' },
+            { num: 2, desc: 'Input Name, Email, Password, and Confirm Password.', expected: 'All fields accept valid input.', status: 'Pass' },
+            { num: 3, desc: 'Click Register button.', expected: 'Account is created and user is logged in.', status: 'Pass' },
+            { num: 4, desc: 'Verify assigned role and portal.', expected: 'User is assigned the Student role and redirected to the Student Dashboard (PG-01).', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.001',
+        scenario: 'Testing Student Dashboard & Daily Mood Reflection (PG-01)',
+        type: 'Positive',
+        testCase: 'Student accesses Student Dashboard and saves a daily mood response',
+        preCondition: 'User is logged in as Student (student@gmail.com / 12345)',
+        keterangan: 'Student dapat melihat dashboard PG-01 dan menyimpan mood harian secara privat',
+        evidence: 'Screenshot PG-01 Student Dashboard & notifikasi mood tersimpan',
+        steps: [
+            { num: 1, desc: 'Log in with student@gmail.com / 12345.', expected: 'Student Dashboard (PG-01) is displayed with "Student portal" header pill.', status: 'Pass' },
+            { num: 2, desc: 'Verify action cards and Upcoming Appointment card.', expected: 'Shows "Check in", "Request counselling", "Learn about mental health", and "Upcoming appointment".', status: 'Pass' },
+            { num: 3, desc: 'Select a mood circle (e.g. "Great") under "How are you feeling today?".', expected: 'Selected mood circle highlights with ring indicator.', status: 'Pass' },
+            { num: 4, desc: 'Click "Save response".', expected: 'Mood response is saved in wellbeing_checkins and confirmation banner is displayed.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.002',
+        scenario: 'Testing Mental Health Literacy Page (PG-02)',
+        type: 'Positive',
+        testCase: 'Student searches, filters, and reads mental health literacy articles',
+        preCondition: 'User is logged in as Student',
+        keterangan: 'Halaman Learn (PG-02) menampilkan artikel edukasi dan filter topik',
+        evidence: 'Screenshot PG-02 Mental Health Literacy & modal artikel',
+        steps: [
+            { num: 1, desc: 'Click "Learn" in the student sidebar (or visit /student/literacy).', expected: 'Mental Health Literacy page (PG-02) opens.', status: 'Pass' },
+            { num: 2, desc: 'Click topic filter pill "Sleep".', expected: 'Articles grid filters to display "A practical sleep routine".', status: 'Pass' },
+            { num: 3, desc: 'Enter keyword in search box and click Search.', expected: 'Matching educational articles are displayed.', status: 'Pass' },
+            { num: 4, desc: 'Click "Read article >" on an article card.', expected: 'Interactive reader modal opens showing the full reviewed article content.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.003',
+        scenario: 'Testing Wellbeing Check-In Quiz Page (PG-03)',
+        type: 'Positive',
+        testCase: 'Student completes the 10-question Wellbeing Check-In reflection quiz',
+        preCondition: 'User is logged in as Student',
+        keterangan: 'Kuis refleksi 10 pertanyaan menyimpan skor dan memberikan panduan non-diagnostik',
+        evidence: 'Screenshot PG-03 Wellbeing Check In & hasil refleksi',
+        steps: [
+            { num: 1, desc: 'Click "Wellbeing" in the student sidebar (or visit /student/wellbeing).', expected: 'Wellbeing Check In page (PG-03) opens showing progress bar (6 of 10).', status: 'Pass' },
+            { num: 2, desc: 'Select answer options ("Not at all", "Several days", "More than half the days", "Nearly every day").', expected: 'Selected option highlights in teal and updates answer state.', status: 'Pass' },
+            { num: 3, desc: 'Navigate to question 10 using "Continue" button.', expected: 'Progress bar reaches 10 of 10 and "Submit check-in" button appears.', status: 'Pass' },
+            { num: 4, desc: 'Click "Submit check-in".', expected: 'Check-in score (/30) and non-diagnostic guidance are saved and displayed in Recent private reflections.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.004',
+        scenario: 'Testing Counselling Request & Scheduling Page (PG-04)',
+        type: 'Positive',
+        testCase: 'Student schedules and submits a private counselling appointment request',
+        preCondition: 'User is logged in as Student',
+        keterangan: 'Student dapat memilih konselor, jadwal waktu, mode sesi, dan mengirim pengajuan',
+        evidence: 'Screenshot PG-04 Counselling Request & jadwal terkonfirmasi',
+        steps: [
+            { num: 1, desc: 'Click "Counselling" in the student sidebar (or visit /student/counselling).', expected: 'Counselling Request page (PG-04) opens with 4-step stepper (Concern, Consent, Schedule, Review).', status: 'Pass' },
+            { num: 2, desc: 'Select Counsellor ("Alisa • Student wellbeing") and time slot ("13:30").', expected: '"Your request" summary card updates dynamically on the right.', status: 'Pass' },
+            { num: 3, desc: 'Choose session mode ("In person" or "Online").', expected: 'Session mode pill highlights active selection.', status: 'Pass' },
+            { num: 4, desc: 'Click "Continue" to submit the request.', expected: 'Appointment is stored as Confirmed in counselling_requests and listed under scheduled appointments.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.005',
+        scenario: 'Testing Student Notifications Page',
+        type: 'Positive',
+        testCase: 'Student views private appointment confirmations and counsellor support updates',
+        preCondition: 'User is logged in as Student',
+        keterangan: 'Halaman Notifications menampilkan status sesi dan rencana dukungan dari konselor',
+        evidence: 'Screenshot halaman Student Notifications',
+        steps: [
+            { num: 1, desc: 'Click "Notifications" in the student sidebar (/student/notifications).', expected: 'Notifications page opens.', status: 'Pass' },
+            { num: 2, desc: 'Inspect appointment status cards.', expected: 'Displays confirmed session details, date/time, and any support plan shared by the counsellor.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'STUDENT',
+        pbi: 'PBI #4',
+        caseId: 'TC.StudentRole.006',
+        scenario: 'Testing Student Role Boundary Restrictions',
+        type: 'Negative',
+        testCase: 'Non-student roles (Admin & Counsellor) attempt to access student-only routes',
+        preCondition: 'User is logged in as Administrator or Counsellor',
+        keterangan: 'Rute /student/* dilindungi middleware role:student',
+        evidence: 'Screenshot HTTP 403 pada rute student oleh non-student',
+        steps: [
+            { num: 1, desc: 'Log in as Administrator and visit /student/wellbeing.', expected: 'Returns HTTP 403 Forbidden.', status: 'Pass' },
+            { num: 2, desc: 'Log in as Counsellor and visit /student/counselling.', expected: 'Returns HTTP 403 Forbidden.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.001',
+        scenario: 'Testing Counsellor Workspace (PG-05)',
+        type: 'Positive',
+        testCase: 'Counsellor logs in and accesses PG-05 Counsellor Workspace, workload metrics, and interactive request queue',
+        preCondition: 'User is logged in as Counsellor (counsellor@gmail.com / 12345)',
+        keterangan: 'Workspace menampilkan beban kerja hari ini, antrean ST-204/ST-187/ST-221/ST-163, dan informasi mahasiswa terotorisasi',
+        evidence: 'Screenshot PG-05 Counsellor Workspace',
+        steps: [
+            { num: 1, desc: 'Log in with counsellor@gmail.com / 12345.', expected: 'Counsellor Workspace (PG-05) opens with "Counsellor portal" pill.', status: 'Pass' },
+            { num: 2, desc: 'Inspect workload metric cards.', expected: 'Shows Pending requests (7), Today\'s sessions (4), and Follow-ups due (3).', status: 'Pass' },
+            { num: 3, desc: 'Click a student request (e.g. ST-204) in the Request queue.', expected: 'Right panel dynamically loads ST-204 Authorised Student Information (Consent verified, Wellbeing reflection 21/30, Mood: Low).', status: 'Pass' },
+            { num: 4, desc: 'Verify sidebar navigation links.', expected: 'Workspace, Requests, Schedule, Records, and Referrals links are active and accessible.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.002',
+        scenario: 'Testing Confidential Session Notes & Student Support Notification',
+        type: 'Positive',
+        testCase: 'Counsellor saves a session note draft and completes a session to notify the student',
+        preCondition: 'User is logged in as Counsellor on PG-05 Workspace',
+        keterangan: 'Catatan sesi bersifat rahasia (hanya untuk konselor) dan dapat disimpan sebagai draft atau diselesaikan',
+        evidence: 'Screenshot notifikasi sukses Save draft & Complete and notify',
+        steps: [
+            { num: 1, desc: 'Select ST-187 in the Counsellor Workspace.', expected: 'Right panel shows "ST-187 • Appointment 10:00" and "Authorised counsellor only" badge.', status: 'Pass' },
+            { num: 2, desc: 'Enter observations in "Session note" and click "Save draft".', expected: 'Note is saved with note_status="draft" and confirmation banner appears.', status: 'Pass' },
+            { num: 3, desc: 'Update "Support plan" and click "Complete and notify".', expected: 'Session is marked "Completed & Notified", student_notified_at timestamp is recorded, and student receives support update.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.003',
+        scenario: 'Testing Counselling Request Queue & Priority Triage',
+        type: 'Positive',
+        testCase: 'Counsellor filters request queue and updates a student\'s priority and support action',
+        preCondition: 'User is logged in as Counsellor on /counsellor/requests',
+        keterangan: 'Konselor dapat memprioritaskan permintaan konseling dan menetapkan dukungan yang tepat',
+        evidence: 'Screenshot halaman Counselling Requests & Triage',
+        steps: [
+            { num: 1, desc: 'Click "Requests" in the counsellor sidebar (/counsellor/requests).', expected: 'Request queue & triage page opens showing student requests and Authorised Student Info.', status: 'Pass' },
+            { num: 2, desc: 'Filter requests by clicking "High priority" pill.', expected: 'Displays high-priority student requests (e.g. ST-204).', status: 'Pass' },
+            { num: 3, desc: 'Change priority, session time/mode, and Appropriate Support Action on a request and click "Update Support".', expected: 'Request record is updated in database and success flash message is shown.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.004',
+        scenario: 'Testing Authorised Student Information & Records Page',
+        type: 'Positive',
+        testCase: 'Counsellor accesses consented student wellbeing check-ins, mood logs, and confidential records',
+        preCondition: 'User is logged in as Counsellor on /counsellor/records',
+        keterangan: 'Konselor dapat meninjau skor wellbeing check-in dan riwayat mood mahasiswa yang telah memberikan consent',
+        evidence: 'Screenshot halaman Authorised Student Records',
+        steps: [
+            { num: 1, desc: 'Click "Records" in the counsellor sidebar (/counsellor/records).', expected: 'Authorised Student Records page opens with "Authorised counsellor only" badge.', status: 'Pass' },
+            { num: 2, desc: 'Inspect student cards (ST-187, ST-204, ST-221).', expected: 'Displays "Informed consent verified", Latest Mood, 10-Question Wellbeing Score (/30), and reflection summary.', status: 'Pass' },
+            { num: 3, desc: 'Search by student code "ST-204".', expected: 'Filters records to Alex Rivera (ST-204) showing score 21/30 and confidential clinical notes.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.005',
+        scenario: 'Testing Counsellor Schedule & Student Support Referrals',
+        type: 'Positive',
+        testCase: 'Counsellor views session timetable and creates a structured Student Support Referral',
+        preCondition: 'User is logged in as Counsellor',
+        keterangan: 'Konselor dapat melihat jadwal sesi (/counsellor/schedule) dan membuat rujukan dukungan (/counsellor/referrals)',
+        evidence: 'Screenshot halaman Schedule & Referrals',
+        steps: [
+            { num: 1, desc: 'Click "Schedule" in the sidebar (/counsellor/schedule).', expected: 'Displays time slots (09:00, 10:00, 13:30, 15:00) and scheduled student appointments.', status: 'Pass' },
+            { num: 2, desc: 'Click "Referrals" in the sidebar (/counsellor/referrals).', expected: 'Student support referrals & follow-up plans page opens.', status: 'Pass' },
+            { num: 3, desc: 'Select an Authorised Student, Support Pathway, Priority, Rationale, and Support Plan, then click "Save Support Referral".', expected: 'New referral is saved in student_referrals and appears in the active referrals list.', status: 'Pass' }
+        ]
+    },
+    {
+        group: 'COUNSELLOR',
+        pbi: 'PBI #5',
+        caseId: 'TC.CounsellorRole.006',
+        scenario: 'Testing Counsellor Privacy Boundary & Access Control',
+        type: 'Negative',
+        testCase: 'Non-counsellor roles (Administrator & Student) attempt to access confidential counsellor routes',
+        preCondition: 'User is logged in as Administrator or Student',
+        keterangan: 'Administrator dan Student diblokir (HTTP 403) dari mengakses catatan konseling dan data klinis konselor',
+        evidence: 'Screenshot HTTP 403 pada rute /counsellor/*',
+        steps: [
+            { num: 1, desc: 'Log in as Administrator (admin@gmail.com) and attempt to visit /counsellor/records.', expected: 'Server returns HTTP 403 Forbidden (enforcing the Privacy Boundary).', status: 'Pass' },
+            { num: 2, desc: 'Attempt to visit /counsellor/requests as Administrator.', expected: 'Server returns HTTP 403 Forbidden.', status: 'Pass' },
+            { num: 3, desc: 'Log in as Student (student@gmail.com) and attempt to visit /counsellor/records.', expected: 'Server returns HTTP 403 Forbidden.', status: 'Pass' }
+        ]
+    }
+];
+
+let currentFilter = 'ALL';
+
+function renderTable() {
+    const tbody = document.getElementById('tableBody');
+    const query = document.getElementById('searchBox').value.trim().toLowerCase();
+    tbody.innerHTML = '';
+
+    testCases.forEach(tc => {
+        if (currentFilter !== 'ALL' && tc.group !== currentFilter) return;
+
+        const searchable = `${tc.pbi} ${tc.caseId} ${tc.scenario} ${tc.type} ${tc.testCase} ${tc.preCondition} ${tc.keterangan} ${tc.steps.map(s => s.desc + ' ' + s.expected).join(' ')}`.toLowerCase();
+        if (query && !searchable.includes(query)) return;
+
+        tc.steps.forEach((step, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = idx === 0 ? 'case-start' : 'step-continuation';
+
+            const typeBadge = tc.type === 'Positive'
+                ? '<span class="badge badge-pos">Positive</span>'
+                : '<span class="badge badge-neg">Negative</span>';
+
+            tr.innerHTML = `
+                <td>${idx === 0 ? `<span class="badge badge-pbi">${tc.pbi}</span>` : ''}</td>
+                <td class="case-id">${idx === 0 ? tc.caseId : ''}</td>
+                <td>${idx === 0 ? tc.scenario : ''}</td>
+                <td>${idx === 0 ? typeBadge : ''}</td>
+                <td>${idx === 0 ? tc.testCase : ''}</td>
+                <td>${idx === 0 ? tc.preCondition : ''}</td>
+                <td class="step-num">${step.num}</td>
+                <td>${step.desc}</td>
+                <td>${step.expected}</td>
+                <td><span class="badge badge-pass">${step.status}</span></td>
+                <td>${idx === 0 ? tc.keterangan : ''}</td>
+                <td>${idx === 0 ? tc.evidence : ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+}
+
+function filterCases(group, btn) {
+    currentFilter = group;
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable();
+}
+
+function searchTable() {
+    renderTable();
+}
+
+function buildRowsArray() {
+    const rows = [
+        ['Format Test Case', '', '', '', '', '', '', '', '', '', '', ''],
+        ['', '', '', '', '', '', '', '', '', '', '', ''],
+        ['PBI ID', 'Case ID', 'Test Scenario', 'Type', 'Test Case', 'Pre Condition', 'Steps', 'Steps Description', 'Expected Result', 'Status (Pass/Fail)', 'Keterangan', 'Evidence']
+    ];
+
+    testCases.forEach(tc => {
+        tc.steps.forEach((step, idx) => {
+            rows.push([
+                idx === 0 ? tc.pbi : '',
+                idx === 0 ? tc.caseId : '',
+                idx === 0 ? tc.scenario : '',
+                idx === 0 ? tc.type : '',
+                idx === 0 ? tc.testCase : '',
+                idx === 0 ? tc.preCondition : '',
+                String(step.num),
+                step.desc,
+                step.expected,
+                step.status,
+                idx === 0 ? tc.keterangan : '',
+                idx === 0 ? tc.evidence : ''
+            ]);
+        });
+    });
+
+    return rows;
+}
+
+function copyForSpreadsheet() {
+    const rows = buildRowsArray();
+    const tsv = rows.map(r => r.map(cell => String(cell).replace(/\t/g, ' ')).join('\t')).join('\n');
+    navigator.clipboard.writeText(tsv).then(() => {
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    });
+}
+
+function downloadCSV() {
+    const rows = buildRowsArray();
+    const csv = rows.map(r => r.map(cell => {
+        const s = String(cell);
+        return (s.includes(',') || s.includes('"') || s.includes('\n'))
+            ? '"' + s.replace(/"/g, '""') + '"'
+            : s;
+    }).join(',')).join('\r\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'test_cases_daniel_adrian.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+renderTable();
+</script>
+</body>
+</html>
