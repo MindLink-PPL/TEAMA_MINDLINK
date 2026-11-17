@@ -54,7 +54,21 @@ class InformedConsentTest extends DuskTestCase
     }
 
     /**
-     * 4. PBI #8 - TC.DataPolicy.001 (Positive):
+     * 4. PBI #7 - TC.AdminConsent.002 (Negative):
+     * Administrator accesses consent records cleanly without SQL/server errors
+     */
+    public function test_tc_admin_consent_002_page_loads_gracefully(): void
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/admin/consents')
+                    ->assertSee('Student Consent Records')
+                    ->assertDontSee('SQLSTATE')
+                    ->assertDontSee('Whoops');
+        });
+    }
+
+    /**
+     * 5. PBI #8 - TC.DataPolicy.001 (Positive):
      * Student reviews all four sections of the data usage policy before consenting
      */
     public function test_tc_data_policy_001_review_four_policy_sections(): void
@@ -72,7 +86,7 @@ class InformedConsentTest extends DuskTestCase
     }
 
     /**
-     * 5. PBI #8 - TC.DataPolicy.002 (Negative):
+     * 6. PBI #8 - TC.DataPolicy.002 (Negative):
      * Student declines the informed consent and data usage terms
      */
     public function test_tc_data_policy_002_decline_consent_flow(): void
