@@ -5,16 +5,38 @@ namespace App\Http\Controllers;
 use App\Models\{Appointment, Availability, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
-    public function page() { return view('student.appointments'); }
+    public function page() { return view('students.appointments'); }
 
     public function counsellors()
     {
         return User::where('role', 'counsellor')->get(['id', 'name']);
     }
 
+    public function counsellorDashboard()
+{
+    $appointments = Appointment::with('student:id,name,email')
+        ->where('counsellor_id', auth()->id())
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get();
+
+    $availabilities = Availability::where(
+        'counsellor_id',
+        auth()->id()
+    )
+        ->orderBy('date')
+        ->orderBy('time')
+        ->get();
+
+    return view(
+        'counsellor.dashboard',
+        compact('appointments', 'availabilities')
+    );
+}
     // Free slots = opened by counsellor minus already booked (PBI #14 reads this)
     public function slots(Request $r)
     {
@@ -79,4 +101,111 @@ class AppointmentController extends Controller
         return Availability::where('counsellor_id', $cid)->where('date', $date)->orderBy('time')->pluck('time')
             ->filter(fn($t) => $this->isFree($cid, $date, $t, $ignoreId))->values();
     }
+    
+public function storeAvailability(Request $request)
+{
+    abort_unless(
+        auth()->user()->verification_status === 'verified',
+        403,
+        'Your counsellor account must be verified first.'
+    );
+
+    $validated = $request->validate([
+        'date' => ['required', 'date', 'after_or_equal:today'],
+        'start_time' => ['required', 'date_format:H:i'],
+        'end_time' => ['required', 'date_format:H:i'],
+    ]);
+
+    $start = Carbon::createFromFormat(
+        'H:i',
+        $validated['start_time']
+    );
+
+    $end = Carbon::createFromFormat(
+        'H:i',
+        $validated['end_time']
+    );
+
+    if ($end->lte($start)) {
+        return back()->withErrors([
+            'end_time' => 'End time must be later than start time.'
+        ]);
+    }
+
+    // Prevent adding slots that have already passed today.
+    $firstSlot = Carbon::parse(
+        $validated['date'] . ' ' . $validated['start_time']
+    );
+
+    if ($firstSlot->isPast()) {
+        return back()->withErrors([
+            'start_time' => 'Please select a future time.'
+        ]);
+    }
+
+    $created = 0;
+
+    // Generate one-hour appointment slots.
+    while ($start->lt($end)) {
+
+        $time = $start->format('H:i');
+
+        $availability = Availability::firstOrCreate([
+            'counsellor_id' => auth()->id(),
+            'date' => $validated['date'],
+            'time' => $time,
+        ]);
+
+        if ($availability->wasRecentlyCreated) {
+            $created++;
+        }
+
+        $start->addHour();
+    }
+
+    return back()->with(
+        'success',
+        $created . ' availability slot(s) added successfully!'
+    );
+}
+
+
+public function destroyAvailability(Availability $availability)
+{
+    abort_unless(
+        auth()->user()->verification_status === 'verified',
+        403,
+        'Your counsellor account must be verified first.'
+    );
+
+    // Make sure the slot belongs to the logged-in counsellor.
+    abort_unless(
+        $availability->counsellor_id === auth()->id(),
+        403
+    );
+
+    // Check whether this slot already has a confirmed appointment.
+    $isBooked = Appointment::where(
+        'counsellor_id',
+        auth()->id()
+    )
+        ->whereDate('date', $availability->date)
+        ->where('time', $availability->time)
+        ->where('status', 'confirmed')
+        ->exists();
+
+    if ($isBooked) {
+        return back()->withErrors([
+            'availability' => 'This slot already has a confirmed appointment and cannot be removed.'
+        ]);
+    }
+
+    $availability->delete();
+
+    return back()->with(
+        'success',
+        'Availability slot removed successfully!'
+    );
+}
+
 }
