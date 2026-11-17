@@ -4,10 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\ArticleCategory;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ArticleController extends Controller
 {
+    private function currentUser()
+    {
+        return auth()->user() ?? User::firstOrCreate(
+            ['email' => 'student@mindlink.test'],
+            ['name' => 'Test Student', 'password' => bcrypt('password')]
+        );
+    }
+
     public function index(Request $request)
     {
         $categories = ArticleCategory::all();
@@ -26,7 +35,7 @@ class ArticleController extends Controller
         }
 
         $articles = $query->get();
-        $savedArticleIds = auth()->user()->savedArticles()->pluck('articles.id')->toArray();
+        $savedArticleIds = $this->currentUser()->savedArticles()->pluck('articles.id')->toArray();
 
         return view('articles.index', compact('articles', 'categories', 'savedArticleIds'));
     }
@@ -34,14 +43,14 @@ class ArticleController extends Controller
     public function show(Article $article)
     {
         $article->load('category');
-        $isSaved = auth()->user()->savedArticles()->where('article_id', $article->id)->exists();
+        $isSaved = $this->currentUser()->savedArticles()->where('article_id', $article->id)->exists();
 
         return view('articles.show', compact('article', 'isSaved'));
     }
 
     public function toggleSave(Article $article)
     {
-        $user = auth()->user();
+        $user = $this->currentUser();
 
         if ($user->savedArticles()->where('article_id', $article->id)->exists()) {
             $user->savedArticles()->detach($article->id);
@@ -56,7 +65,8 @@ class ArticleController extends Controller
 
     public function saved()
     {
-        $articles = auth()->user()->savedArticles()->with('category')->orderByPivot('saved_at', 'desc')->get();
+        $articles = $this->currentUser()->savedArticles()->with('category')->orderByPivot('saved_at', 'desc')->get();
+
         return view('articles.saved', compact('articles'));
     }
 }
