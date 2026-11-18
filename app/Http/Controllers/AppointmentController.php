@@ -9,7 +9,10 @@ use Carbon\Carbon;
 
 class AppointmentController extends Controller
 {
-    public function page() { return view('students.appointments'); }
+    public function page()
+    {
+        return app(CounsellingController::class)->create();
+    }
 
     public function counsellors()
     {
@@ -76,7 +79,7 @@ public function slots(Request $r)
         $data = $this->validated($r);
         return DB::transaction(function () use ($data) {
             abort_unless($this->isFree($data['counsellor_id'], $data['date'], $data['time']), 409, 'Slot no longer available');
-            return Appointment::create($data + ['student_id' => auth()->id()]);
+            return Appointment::create($data + ['student_id' => auth()->id(), 'status' => 'confirmed']);
         });
     }
 

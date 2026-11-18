@@ -11,16 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('wellbeing_checkins', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->string('mood')->nullable();
-            $table->json('answers')->nullable();
-            $table->unsignedInteger('total_score')->default(0);
-            $table->text('guidance')->nullable();
-            $table->timestamps();
-        });
-
         Schema::create('counselling_requests', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('request_id')->nullable()->index();
@@ -49,6 +39,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('counselling_requests');
-        Schema::dropIfExists('wellbeing_checkins');
     }
 };

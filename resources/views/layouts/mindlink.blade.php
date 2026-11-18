@@ -1,65 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindLink - Wellbeing Check-in</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{{ config('app.name', 'MindLink') }} - @yield('header_title', 'Wellbeing self check-in')</title>
+
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-[#f4f7f9] font-sans antialiased text-slate-900">
-    <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar -->
-        <aside class="w-60 bg-[#12263a] text-white flex flex-col justify-between shrink-0 hidden md:flex">
-            <div>
-                <div class="p-6 flex items-center space-x-3">
-                    <div class="w-9 h-9 bg-[#2a9d8f] rounded-full flex items-center justify-center font-bold text-white text-sm">M</div>
-                    <div>
-                        <h1 class="font-bold text-lg leading-none">MindLink</h1>
-                        <span class="text-xs text-slate-300">Support platform</span>
-                    </div>
-                </div>
-                <nav class="mt-4 space-y-2 px-3">
-                    <a href="{{ url('/dashboard') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
-                        <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">D</span>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="{{ route('articles.index') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
-                        <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">L</span>
-                        <span>Learn</span>
-                    </a>
-                    <a href="{{ route('quiz.index') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg bg-[#1e3f5a] text-white">
-                        <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">W</span>
-                        <span>Wellbeing</span>
-                    </a>
-                    <a href="{{ route('counselling.request') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
-                        <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">C</span>
-                        <span>Counselling</span>
-                    </a>
-                    <a href="{{ url('/student/notifications') }}" class="flex items-center space-x-3 px-3 py-2.5 text-sm font-medium rounded-lg text-slate-200 hover:bg-[#1b3650]">
-                        <span class="w-6 h-6 rounded-full bg-[#2a9d8f] text-white text-xs flex items-center justify-center font-bold">N</span>
-                        <span>Notifications</span>
-                    </a>
-                </nav>
-            </div>
-            <div class="p-4 m-3 bg-[#1b3650] rounded-xl flex items-center space-x-3">
-                <div class="w-9 h-9 bg-[#f4a261] rounded-full flex items-center justify-center font-bold text-white text-sm">S</div>
-                <div>
-                    <p class="text-sm font-semibold text-white leading-tight">Student</p>
-                    <span class="text-xs text-slate-300">Secure account</span>
-                </div>
-            </div>
-        </aside>
+<body class="font-sans antialiased h-full bg-[#f4f7fa] text-slate-800">
+    <div class="min-h-screen flex">
+        <!-- Unified MindLink Sidebar -->
+        @include('layouts.navigation')
 
         <!-- Main Content Area -->
-        <main class="flex-1 flex flex-col overflow-y-auto">
-            <header class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center shrink-0">
-                <h2 class="text-lg font-bold text-[#12263a]">@yield('header_title', 'Wellbeing self check-in')</h2>
-                <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">Student portal</span>
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-64">
+            <!-- Top Bar -->
+            <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('toggle-sidebar'))"
+                        class="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition focus:outline-none"
+                        aria-label="Toggle Navigation"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+
+                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                        @yield('header_title', 'Wellbeing self check-in')
+                    </h1>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 shadow-2xs">
+                        {{ Auth::user()?->portal_name ?? 'Student portal' }}
+                    </span>
+                </div>
             </header>
-            <div class="p-8 flex-1">
+
+            <main class="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto">
                 @yield('content')
-            </div>
-        </main>
+            </main>
+        </div>
     </div>
 </body>
 </html>

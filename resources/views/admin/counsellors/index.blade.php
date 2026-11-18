@@ -1,189 +1,124 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - MindLink</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+<x-app-layout>
+    <x-slot name="header">
+        <h1 class="text-xl sm:text-2xl font-bold text-[#0f2a4a] tracking-tight">
+            Schedules &amp; Verification
+        </h1>
+    </x-slot>
 
-<body class="bg-gray-100 min-h-screen">
-
-<div class="max-w-6xl mx-auto p-6">
-
-    <div class="flex justify-between items-center mb-8">
+    <div class="space-y-6">
         <div>
-            <h1 class="text-3xl font-bold text-blue-600">
-                MindLink Admin
-            </h1>
-
-            <p class="text-gray-500 mt-1">
-                Counsellor Verification Dashboard
-            </p>
+            <h2 class="text-2xl font-bold text-[#0f2a4a]">Counsellor Verification Dashboard</h2>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Review counsellor applications, inspect uploaded certificates, and approve or reject verification requests.</p>
         </div>
 
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
+        @if ($errors->any())
+            <div class="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-xl text-sm">
+                @foreach ($errors->all() as $error)
+                    <p>{{ $error }}</p>
+                @endforeach
+            </div>
+        @endif
 
-            <button class="bg-red-500 text-white px-4 py-2 rounded-lg">
-                Logout
-            </button>
-        </form>
-    </div>
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-6 sm:p-8">
+            <h3 class="text-lg font-bold text-[#0f2a4a] mb-5">Counsellor Applications</h3>
 
-    @if (session('success'))
-        <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-5">
-            {{ session('success') }}
-        </div>
-    @endif
+            @forelse ($counsellors as $counsellor)
+                <div class="border border-slate-200 rounded-xl p-5 mb-5 last:mb-0">
+                    <div class="flex justify-between items-start gap-3">
+                        <div>
+                            <h4 class="font-bold text-base text-[#0f2a4a]">
+                                {{ $counsellor->name }}
+                            </h4>
+                            <p class="text-slate-500 text-xs mt-0.5">
+                                {{ $counsellor->email }}
+                            </p>
+                        </div>
 
-    @if ($errors->any())
-        <div class="bg-red-100 text-red-700 p-4 rounded-lg mb-5">
-            @foreach ($errors->all() as $error)
-                <p>{{ $error }}</p>
-            @endforeach
-        </div>
-    @endif
+                        @if ($counsellor->verification_status === 'pending')
+                            <span class="bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full text-xs font-semibold">
+                                Pending
+                            </span>
+                        @elseif ($counsellor->verification_status === 'verified')
+                            <span class="bg-[#e6f5f0] text-[#1c9c8c] border border-[#cdece2] px-3 py-1 rounded-full text-xs font-semibold">
+                                Verified
+                            </span>
+                        @elseif ($counsellor->verification_status === 'rejected')
+                            <span class="bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-full text-xs font-semibold">
+                                Rejected
+                            </span>
+                        @endif
+                    </div>
 
-    <div class="bg-white rounded-xl shadow p-6">
-
-        <h2 class="text-xl font-semibold mb-5">
-            Counsellor Applications
-        </h2>
-
-        @forelse ($counsellors as $counsellor)
-
-            <div class="border rounded-lg p-5 mb-5">
-
-                <div class="flex justify-between items-start gap-3">
-
-                    <div>
-                        <h3 class="font-bold text-lg">
-                            {{ $counsellor->name }}
-                        </h3>
-
-                        <p class="text-gray-500 text-sm">
-                            {{ $counsellor->email }}
-                        </p>
+                    <div class="mt-4">
+                        @if ($counsellor->certificate_path)
+                            <a href="{{ route('admin.counsellors.certificate', $counsellor->id) }}"
+                               class="text-[#1c9c8c] font-semibold underline text-xs">
+                                Download Certificate
+                            </a>
+                        @else
+                            <p class="text-rose-500 text-xs">
+                                No certificate uploaded.
+                            </p>
+                        @endif
                     </div>
 
                     @if ($counsellor->verification_status === 'pending')
-                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
-                            Pending
-                        </span>
+                        <div class="mt-5 flex flex-wrap items-center gap-4">
+                            {{-- APPROVE BUTTON --}}
+                            <form
+                                action="{{ route('admin.counsellors.approve', $counsellor->id) }}"
+                                method="POST"
+                            >
+                                @csrf
+                                <button
+                                    type="submit"
+                                    class="bg-[#1c9c8c] hover:bg-[#157a6e] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-2xs transition cursor-pointer"
+                                    onclick="return confirm('Are you sure you want to approve this counsellor?')"
+                                >
+                                    ✓ Approve Counsellor
+                                </button>
+                            </form>
 
-                    @elseif ($counsellor->verification_status === 'verified')
-                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                            Verified
-                        </span>
-
+                            {{-- REJECT FORM --}}
+                            <form
+                                action="{{ route('admin.counsellors.reject', $counsellor->id) }}"
+                                method="POST"
+                                class="flex flex-wrap items-center gap-2"
+                            >
+                                @csrf
+                                <input
+                                    type="text"
+                                    name="rejection_reason"
+                                    required
+                                    maxlength="1000"
+                                    placeholder="Enter rejection reason"
+                                    class="border border-slate-300 rounded-xl px-3.5 py-2 text-xs"
+                                >
+                                <button
+                                    type="submit"
+                                    class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-2xs transition cursor-pointer"
+                                    onclick="return confirm('Are you sure you want to reject this counsellor?')"
+                                >
+                                    ✕ Reject
+                                </button>
+                            </form>
+                        </div>
                     @elseif ($counsellor->verification_status === 'rejected')
-                        <span class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm">
-                            Rejected
-                        </span>
+                        <div class="bg-rose-50 text-rose-700 p-3 rounded-xl mt-4 text-xs">
+                            <strong>Rejection reason:</strong>
+                            {{ $counsellor->rejection_reason }}
+                        </div>
+                    @elseif ($counsellor->verification_status === 'verified')
+                        <div class="bg-[#e6f5f0] text-[#0f766e] p-3 rounded-xl mt-4 text-xs font-medium">
+                            ✓ This counsellor has been successfully verified.
+                        </div>
                     @endif
-
                 </div>
-
-                <div class="mt-4">
-
-                    @if ($counsellor->certificate_path)
-
-                        <a href="{{ route('admin.counsellors.certificate', $counsellor->id) }}"
-                           class="text-blue-600 underline text-sm">
-                            Download Certificate
-                        </a>
-
-                    @else
-
-                        <p class="text-red-500 text-sm">
-                            No certificate uploaded.
-                        </p>
-
-                    @endif
-
-                </div>
-
-
-@if ($counsellor->verification_status === 'pending')
-
-    <div class="mt-5 flex flex-wrap items-center gap-4">
-
-        {{-- APPROVE BUTTON --}}
-        <form
-            action="{{ route('admin.counsellors.approve', $counsellor->id) }}"
-            method="POST"
-        >
-            @csrf
-
-            <button
-                type="submit"
-                style="background-color: #15803d; color: white;"
-                class="font-bold px-6 py-3 rounded-lg border border-green-800 shadow-md hover:opacity-90 cursor-pointer"
-                onclick="return confirm('Are you sure you want to approve this counsellor?')"
-            >
-                ✓ Approve Counsellor
-            </button>
-        </form>
-
-        {{-- REJECT FORM --}}
-        <form
-            action="{{ route('admin.counsellors.reject', $counsellor->id) }}"
-            method="POST"
-            class="flex flex-wrap items-center gap-2"
-        >
-            @csrf
-
-            <input
-                type="text"
-                name="rejection_reason"
-                required
-                maxlength="1000"
-                placeholder="Enter rejection reason"
-                class="border border-gray-300 rounded-lg px-3 py-3"
-            >
-
-            <button
-                type="submit"
-                style="background-color: #dc2626; color: white;"
-                class="font-bold px-6 py-3 rounded-lg border border-red-800 shadow-md hover:opacity-90 cursor-pointer"
-                onclick="return confirm('Are you sure you want to reject this counsellor?')"
-            >
-                ✕ Reject
-            </button>
-
-        </form>
-
+            @empty
+                <p class="text-slate-500 text-center py-8 text-xs">
+                    No counsellor applications found.
+                </p>
+            @endforelse
+        </div>
     </div>
-
-@elseif ($counsellor->verification_status === 'rejected')
-
-    <div class="bg-red-50 text-red-700 p-3 rounded-lg mt-4 text-sm">
-        <strong>Rejection reason:</strong>
-        {{ $counsellor->rejection_reason }}
-    </div>
-
-@elseif ($counsellor->verification_status === 'verified')
-
-    <div class="bg-green-50 text-green-700 p-3 rounded-lg mt-4">
-        ✓ This counsellor has been successfully verified.
-    </div>
-
-@endif
-
-            </div>
-
-        @empty
-
-            <p class="text-gray-500 text-center py-8">
-                No counsellor applications found.
-            </p>
-
-        @endforelse
-
-    </div>
-
-</div>
-
-</body>
-</html>
+</x-app-layout>

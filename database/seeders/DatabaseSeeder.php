@@ -3,12 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\CounsellingRequest;
-use App\Models\InformedConsent;
 use App\Models\Permission;
 use App\Models\Role;
-use App\Models\StudentReferral;
 use App\Models\User;
-use App\Models\WellbeingCheckin;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -101,12 +98,6 @@ class DatabaseSeeder extends Seeder
                 'description' => 'Can record private session observations, save drafts, complete sessions, and notify students.',
             ],
             [
-                'name' => 'Manage Support Referrals & Follow-ups',
-                'slug' => 'counselling.referrals.manage',
-                'module' => 'Counselling',
-                'description' => 'Can create appropriate support plans, follow-up tasks, and specialist referrals for students.',
-            ],
-            [
                 'name' => 'Student Wellbeing Portal',
                 'slug' => 'dashboard.view',
                 'module' => 'Student Portal',
@@ -162,7 +153,6 @@ class DatabaseSeeder extends Seeder
             $createdPermissions['counselling.requests.manage']->id,
             $createdPermissions['counselling.students.view']->id,
             $createdPermissions['counselling.notes.manage']->id,
-            $createdPermissions['counselling.referrals.manage']->id,
             $createdPermissions['users.view']->id,
             $createdPermissions['reports.view']->id,
             $createdPermissions['dashboard.view']->id,
@@ -265,53 +255,7 @@ class DatabaseSeeder extends Seeder
             ArticleSeeder::class,
         ]);
 
-        // 6. Seed Default Informed Consent Record (for PBI #7 Admin Consent table)
-        InformedConsent::firstOrCreate(
-            ['student_id' => '102022440009'],
-            [
-                'is_agreed' => true,
-                'agreed_at' => now(),
-            ]
-        );
-
-        // 7. Seed Authorised Student Wellbeing Check-ins
-        WellbeingCheckin::firstOrCreate(
-            [
-                'user_id' => $testStudent->id,
-                'total_score' => 14,
-            ],
-            [
-                'mood' => 'Okay',
-                'answers' => [1 => 1, 2 => 2, 3 => 1, 4 => 1, 5 => 2, 6 => 2, 7 => 1, 8 => 2, 9 => 1, 10 => 1],
-                'guidance' => 'You have experienced moderate study or emotional pressure over the past two weeks. Exploring our Mental Health Literacy articles or scheduling a check-in with a counsellor may be helpful.',
-            ]
-        );
-
-        WellbeingCheckin::firstOrCreate(
-            [
-                'user_id' => $student1->id,
-                'total_score' => 21,
-            ],
-            [
-                'mood' => 'Low',
-                'answers' => [1 => 2, 2 => 3, 3 => 2, 4 => 2, 5 => 3, 6 => 2, 7 => 2, 8 => 2, 9 => 1, 10 => 2],
-                'guidance' => 'It looks like things have felt quite heavy recently. We encourage you to submit a private Counselling Request so an authorised counsellor can support you.',
-            ]
-        );
-
-        WellbeingCheckin::firstOrCreate(
-            [
-                'user_id' => $student2->id,
-                'total_score' => 11,
-            ],
-            [
-                'mood' => 'Okay',
-                'answers' => [1 => 1, 2 => 1, 3 => 3, 4 => 2, 5 => 1, 6 => 1, 7 => 0, 8 => 1, 9 => 0, 10 => 1],
-                'guidance' => 'You have experienced moderate study or emotional pressure over the past two weeks. Exploring our Mental Health Literacy articles or scheduling a check-in with a counsellor may be helpful.',
-            ]
-        );
-
-        // 8. Seed Counselling Requests matching PG-01 & PG-05
+        // 6. Seed Counselling Requests matching PG-01 & PG-05
         $req187 = CounsellingRequest::updateOrCreate(
             ['student_code' => 'ST-187'],
             [
@@ -413,39 +357,6 @@ class DatabaseSeeder extends Seeder
                 'status' => 'Confirmed',
                 'priority' => 'Follow-up',
                 'submitted_label' => 'Follow-up requested by student',
-            ]
-        );
-
-        // 9. Seed Initial Support Referrals
-        StudentReferral::firstOrCreate(
-            [
-                'student_code' => 'ST-204',
-                'referral_type' => 'Academic Support & Assessment Consideration',
-            ],
-            [
-                'user_id' => $student1->id,
-                'counsellor_id' => $alisaCounsellor->id,
-                'counselling_request_id' => $req204->id,
-                'urgency' => 'High priority',
-                'reason' => 'Persistent anxiety impacting examination preparation and sleep continuity.',
-                'support_plan' => 'Coordinate 7-day coursework extension with Faculty Academic Advisor and schedule weekly counselling check-in.',
-                'status' => 'Active',
-            ]
-        );
-
-        StudentReferral::firstOrCreate(
-            [
-                'student_code' => 'ST-187',
-                'referral_type' => 'Study Skills & Stress Management Workshop',
-            ],
-            [
-                'user_id' => $testStudent->id,
-                'counsellor_id' => $alisaCounsellor->id,
-                'counselling_request_id' => $req187->id,
-                'urgency' => 'Standard',
-                'reason' => 'Study pressure and concentration fatigue during mid-semester assessments.',
-                'support_plan' => 'Provide structured study pacing toolkit and review progress at next 10:00 appointment.',
-                'status' => 'Follow-up due',
             ]
         );
     }

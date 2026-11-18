@@ -34,7 +34,20 @@ class AdminRoleAccessDuskTest extends DuskTestCase
                 ->assertSee('Weekly request activity')
                 // Step 4: Inspect Privacy Boundary card
                 ->assertSee('Privacy Boundary')
-                ->assertSee('Administration sees service data, not counselling notes.');
+                ->assertSee('Administration sees service data, not counselling notes.')
+                // Step 5: Navigate to Content and Schedules & Verification and verify sidebar persists
+                ->clickLink('Content')
+                ->assertPathIs('/admin/articles')
+                ->assertSee('Manage Mental Health Articles')
+                ->assertSee('Admin portal')
+                ->assertSee('Overview')
+                ->assertSee('Users & Roles')
+                ->clickLink('Schedules & Verification')
+                ->assertPathIs('/admin/dashboard')
+                ->assertSee('Counsellor Verification Dashboard')
+                ->assertSee('Admin portal')
+                ->assertSee('Overview')
+                ->assertSee('Users & Roles');
         });
     }
 

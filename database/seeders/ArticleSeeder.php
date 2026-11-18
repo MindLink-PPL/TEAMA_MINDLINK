@@ -37,7 +37,7 @@ class ArticleSeeder extends Seeder
             ['title' => 'A practical sleep routine'],
             [
                 'category_id' => $sleep->id,
-                'content'     => "Consistent sleep anchors both emotional regulation and memory retention.\n\nAim to wake up at the same time every morning, dim bright screens 30 minutes before bed, and avoid caffeine after late afternoon. Even small improvements in sleep regularity help stabilize mood during busy semesters.",
+                'content'     => "Consistent wake times and consistent sleep anchor both emotional regulation and memory retention.\n\nAim to wake up at the same time every morning, dim bright screens 30 minutes before bed, and avoid caffeine after late afternoon. Even small improvements in sleep regularity help stabilize mood during busy semesters.",
                 'source'      => 'MindLink Sleep Hygiene Resource',
             ]
         );

@@ -11,13 +11,74 @@
             <div>
                 <h2 class="text-2xl font-bold text-[#0f2a4a] tracking-tight">Today's sessions &amp; timetable</h2>
                 <p class="text-xs sm:text-sm text-slate-500 mt-1">
-                    Manage scheduled student appointments, session modes, and clinical preparation.
+                    Manage your time availability slots, scheduled student appointments, and session modes.
                 </p>
             </div>
             <div>
                 <a href="{{ route('counsellor.requests') }}" class="px-4 py-2 rounded-xl bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold transition shadow-2xs inline-block">
                     Open Request Queue &rarr;
                 </a>
+            </div>
+        </div>
+
+        <!-- My Availability Slots Management -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
+            <h3 class="text-lg font-bold text-[#0f2a4a] mb-1">My Availability Slots</h3>
+            <p class="text-xs text-slate-500 mb-6">Set the dates and times when students can book appointments with you.</p>
+
+            @if ($errors->any())
+                <div class="bg-red-50 border border-red-200 text-red-800 px-5 py-3.5 rounded-xl text-xs mb-4">
+                    <ul class="list-disc pl-5 space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form action="{{ route('counsellor.availability.store') }}" method="POST" class="border border-slate-200 rounded-2xl p-5 mb-6 bg-[#f8fafc]">
+                @csrf
+                <h4 class="font-semibold text-xs uppercase tracking-wider text-slate-700 mb-4">Add New Availability</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Available Date</label>
+                        <input type="date" name="date" min="{{ date('Y-m-d') }}" value="{{ old('date') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">Start Time</label>
+                        <input type="time" name="start_time" value="{{ old('start_time') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5">End Time</label>
+                        <input type="time" name="end_time" value="{{ old('end_time') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                    </div>
+                </div>
+                <button type="submit" class="bg-[#0f2a4a] text-white text-xs font-bold px-5 py-2.5 rounded-xl mt-4 hover:bg-slate-800 transition cursor-pointer">
+                    + Add Availability Slot
+                </button>
+            </form>
+
+            <div class="space-y-3">
+                @forelse ($availabilities ?? [] as $availability)
+                    <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-white">
+                        <div>
+                            <p class="font-semibold text-sm text-[#0f2a4a]">{{ \Carbon\Carbon::parse($availability->date)->format('d M Y') }}</p>
+                            <p class="text-xs text-slate-500">{{ \Carbon\Carbon::parse($availability->time)->format('h:i A') }}</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-[#e6f5f0] text-[#1c9c8c] border border-[#cdece2] px-3 py-1 rounded-full text-xs font-bold">Available</span>
+                            <form action="{{ route('counsellor.availability.destroy', $availability->id) }}" method="POST">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="bg-red-50 text-red-700 border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-100 transition cursor-pointer">
+                                    Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-xs text-slate-500 italic">No availability slots added yet.</p>
+                @endforelse
             </div>
         </div>
 

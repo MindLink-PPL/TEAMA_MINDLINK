@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\InformedConsent;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class InformedConsentController extends Controller
 {
     public function index()
     {
-        $consents = InformedConsent::all();
+        $consents = InformedConsent::with('user')->latest('agreed_at')->get();
         return view('admin-consents', compact('consents'));
     }
 
@@ -21,10 +22,17 @@ class InformedConsentController extends Controller
             'is_agreed.accepted' => 'You must read and agree to the data usage terms before proceeding.',
         ]);
 
-        $consent = new InformedConsent();
-        $consent->is_agreed = true;
-        $consent->agreed_at = now();
-        $consent->save();
+        $userId = auth()->id() ?? User::value('id') ?? 1;
+
+        InformedConsent::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'policy_version' => InformedConsent::CURRENT_VERSION,
+            ],
+            [
+                'agreed_at' => now(),
+            ]
+        );
 
         return back()->with('success', 'Success! Informed consent data has been saved to the database.');
     }

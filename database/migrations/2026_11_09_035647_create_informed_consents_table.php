@@ -13,13 +13,11 @@ return new class extends Migration
     {
         Schema::create('informed_consents', function (Blueprint $table) {
             $table->id();
-            
-            // Ini 3 baris kolom tambahan dari kita buat nangkep data PBI-06
-            $table->string('student_id')->nullable(); 
-            $table->boolean('is_agreed')->default(false);
-            $table->timestamp('agreed_at')->nullable();
-            
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('policy_version')->default('2026-v1');
+            $table->timestamp('agreed_at');
             $table->timestamps();
+            $table->unique(['user_id', 'policy_version']);
         });
     }
 

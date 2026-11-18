@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('date');
             $table->string('time', 5);
             $table->string('mode')->default('In person');   // In person | Online
-            $table->string('status')->default('confirmed'); // confirmed | cancelled
+            $table->string('status')->default('pending'); // pending | confirmed | cancelled | completed;
             $table->timestamps();
         });
     }

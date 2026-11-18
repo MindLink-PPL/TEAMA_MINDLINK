@@ -22,20 +22,6 @@ return new class extends Migration
             $table->boolean('follow_up_due')->default(false)->after('support_action');
             $table->timestamp('student_notified_at')->nullable()->after('follow_up_due');
         });
-
-        Schema::create('student_referrals', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('counsellor_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('counselling_request_id')->nullable()->constrained('counselling_requests')->nullOnDelete();
-            $table->string('student_code')->default('ST-187');
-            $table->string('referral_type');
-            $table->string('urgency')->default('Standard');
-            $table->text('reason');
-            $table->text('support_plan')->nullable();
-            $table->string('status')->default('Active');
-            $table->timestamps();
-        });
     }
 
     /**
@@ -43,8 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('student_referrals');
-
         Schema::table('counselling_requests', function (Blueprint $table) {
             $table->dropConstrainedForeignId('counsellor_id');
             $table->dropColumn([

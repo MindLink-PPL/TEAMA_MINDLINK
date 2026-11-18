@@ -1,78 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MindLink - Admin Consent Records</title>
-    <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: #f4f7f6; 
-            padding: 40px; 
-            margin: 0;
-        }
-        .container { 
-            background-color: #ffffff; 
-            padding: 32px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08); 
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        h3 {
-            color: #1f2937;
-            margin-top: 0;
-            margin-bottom: 24px;
-            font-size: 24px;
-        }
-        table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-        th, td { 
-            border-bottom: 1px solid #e5e7eb; 
-            padding: 12px; 
-            text-align: left; 
-            color: #4b5563;
-        }
-        th { 
-            background-color: #f9fafb; 
-            color: #374151; 
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
+<x-app-layout>
+    <x-slot name="header">
+        <h1 class="text-xl sm:text-2xl font-bold text-[#0f2a4a] tracking-tight">
+            Reports &amp; Consents
+        </h1>
+    </x-slot>
 
-<div class="container">
-    <h3>Student Consent Records</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Student ID</th>
-                <th>Consent Status</th>
-                <th>Agreed At</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($consents as $consent)
-            <tr>
-                <td>{{ $consent->id }}</td>
-                <td>{{ $consent->student_id ?? 'N/A' }}</td>
-                <td>
-                    @if($consent->is_agreed)
-                        <span style="color: #2A9D8F; font-weight: bold;">Agreed</span>
-                    @else
-                        <span style="color: #e74c3c; font-weight: bold;">Pending</span>
-                    @endif
-                </td>
-                <td>{{ $consent->agreed_at }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
-</div>
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-2xs">
+            <div class="mb-6">
+                <h2 class="text-xl font-bold text-[#0f2a4a]">Student Consent Records</h2>
+                <p class="text-xs text-slate-500 mt-1">Read-only overview of informed consent agreements accepted before counselling sessions.</p>
+            </div>
 
-</body>
-</html>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-[#f8fafc] border-b border-slate-200 text-slate-600 text-xs font-semibold uppercase tracking-wider">
+                            <th class="py-3 px-4">ID</th>
+                            <th class="py-3 px-4">Student ID</th>
+                            <th class="py-3 px-4">Consent Status</th>
+                            <th class="py-3 px-4">Agreed At</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        @foreach($consents as $consent)
+                        <tr class="hover:bg-slate-50/70 transition">
+                            <td class="py-3 px-4 font-semibold text-[#0f2a4a]">{{ $consent->id }}</td>
+                            <td class="py-3 px-4">{{ $consent->student_id ?? 'N/A' }}</td>
+                            <td class="py-3 px-4">
+                                @if($consent->is_agreed)
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#e6f5f0] text-[#1c9c8c]">Agreed</span>
+                                @else
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600">Pending</span>
+                                @endif
+                            </td>
+                            <td class="py-3 px-4 text-xs text-slate-500">{{ $consent->agreed_at }}</td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

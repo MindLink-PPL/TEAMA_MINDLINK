@@ -46,8 +46,6 @@
                 @php
                     $latestRequest = $student->counsellingRequests->first();
                     $studentCode = $latestRequest?->display_code ?? ('ST-' . (180 + $student->id));
-                    $latestQuiz = $student->wellbeingCheckins->whereNotNull('answers')->first();
-                    $latestMood = $student->wellbeingCheckins->whereNotNull('mood')->first()?->mood ?? 'Okay';
                 @endphp
 
                 <div class="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-2xs space-y-6">
@@ -61,7 +59,7 @@
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-base font-bold text-[#0f2a4a]">{{ $student->name }}</h3>
                                     <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
-                                        Informed consent verified
+                                        Authorised student record
                                     </span>
                                 </div>
                                 <div class="text-xs text-slate-500 mt-0.5">
@@ -72,33 +70,21 @@
 
                         <div class="flex items-center gap-3">
                             <div class="px-3.5 py-2 rounded-xl bg-[#f8fafc] border border-slate-200/80 text-xs">
-                                <span class="text-slate-500">Latest Mood:</span>
-                                <strong class="text-[#0f2a4a] ml-1">{{ $latestMood }}</strong>
+                                <span class="text-slate-500">Assigned Role:</span>
+                                <strong class="text-[#0f2a4a] ml-1">{{ $student->role?->name ?? 'Student' }}</strong>
                             </div>
                             <div class="px-3.5 py-2 rounded-xl bg-[#e6f5f0] border border-[#cdece2] text-xs">
-                                <span class="text-slate-600">Wellbeing Score:</span>
-                                <strong class="text-[#1c9c8c] ml-1">{{ $latestQuiz ? $latestQuiz->total_score . '/30' : 'No quiz yet' }}</strong>
+                                <span class="text-slate-600">Support Requests:</span>
+                                <strong class="text-[#1c9c8c] ml-1">{{ $student->counsellingRequests->count() }}</strong>
                             </div>
                         </div>
                     </div>
 
                     <!-- Two-Column Authorised Data & Session Note Documentation -->
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                        <!-- Left: Wellbeing Reflections & Request History -->
+                        <!-- Left: Request & Support History -->
                         <div class="lg:col-span-7 space-y-4">
-                            <h4 class="text-sm font-bold text-[#0f2a4a]">Authorised Wellbeing Check-In &amp; Support History</h4>
-
-                            @if ($latestQuiz)
-                                <div class="p-4 rounded-xl bg-[#f8fafc] border border-slate-200/80 space-y-2">
-                                    <div class="flex items-center justify-between text-xs">
-                                        <span class="font-bold text-[#0f2a4a]">10-Question Wellbeing Reflection Summary</span>
-                                        <span class="text-slate-500">Score: <strong>{{ $latestQuiz->total_score }} / 30</strong></span>
-                                    </div>
-                                    <p class="text-xs text-slate-600 leading-relaxed">
-                                        {{ $latestQuiz->guidance }}
-                                    </p>
-                                </div>
-                            @endif
+                            <h4 class="text-sm font-bold text-[#0f2a4a]">Authorised Support &amp; Session History</h4>
 
                             <!-- Student's Counselling Requests -->
                             <div class="space-y-2.5">
@@ -118,7 +104,7 @@
                                                 </div>
                                             @endif
                                         </div>
-                                        <span class="px-2.5 py-1 rounded-full font-semibold bg-[#e6f5f0] text-[#1c9c8c] self-start sm:self-center shrink-0">
+                                        <span class="px-2.5 py-1 rounded-full font-semibold {{ $req->status === 'Declined' ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-[#e6f5f0] text-[#1c9c8c]' }} self-start sm:self-center shrink-0">
                                             {{ $req->status }}
                                         </span>
                                     </div>

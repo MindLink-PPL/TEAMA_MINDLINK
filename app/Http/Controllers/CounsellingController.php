@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Counsellor;
 use App\Models\CounsellingRequest;
+use App\Models\InformedConsent;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class CounsellingController extends Controller
 {
@@ -14,7 +16,38 @@ class CounsellingController extends Controller
         $bookedSlots = CounsellingRequest::whereIn('status', ['Under Review', 'Approved'])
             ->get(['counsellor_name', 'appointment_date', 'appointment_time']);
 
-        return view('counselling.request', compact('counsellors', 'bookedSlots'));
+        $initialStep = (int) request('step', 1);
+        $isAppointmentManager = request()->routeIs('student.appointments');
+        $userId = auth()->id() ?? 1;
+        $appointments = CounsellingRequest::where('user_id', $userId)
+            ->orWhere('student_id', $userId)
+            ->latest()
+            ->get();
+
+        return view('counselling.request', compact(
+            'counsellors',
+            'bookedSlots',
+            'initialStep',
+            'isAppointmentManager',
+            'appointments'
+        ));
+    }
+
+    public function cancel(CounsellingRequest $counsellingRequest)
+    {
+        if (auth()->check() && $counsellingRequest->user_id && (int) $counsellingRequest->user_id !== (int) auth()->id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if (in_array($counsellingRequest->status, ['Confirmed', 'Approved', 'Completed', 'Completed & Notified'], true)) {
+            return back()->with('error', 'Confirmed or approved counselling appointments cannot be cancelled.');
+        }
+
+        $counsellingRequest->update([
+            'status' => 'Cancelled',
+        ]);
+
+        return back()->with('success', 'Counselling request has been cancelled.');
     }
 
     public function store(Request $request)
@@ -52,15 +85,36 @@ class CounsellingController extends Controller
             ]);
         }
 
+        $userId = auth()->id() ?? 1;
+        $existingCode = CounsellingRequest::where('user_id', $userId)
+            ->whereNotNull('student_code')
+            ->value('student_code');
+        $studentCode = $existingCode ?: ('ST-' . (200 + $userId));
+
+        InformedConsent::updateOrCreate(
+            [
+                'user_id' => $userId,
+                'policy_version' => InformedConsent::CURRENT_VERSION,
+            ],
+            [
+                'agreed_at' => now(),
+            ]
+        );
+
         CounsellingRequest::create([
-            'student_id' => 1,
+            'user_id' => $userId,
+            'student_id' => $userId,
+            'student_code' => $studentCode,
             'counsellor_name' => $counsellor->name,
             'concern' => $validated['concern'],
             'goals' => $validated['goals'] ?? '',
+            'consent_accepted_at' => now(),
             'appointment_date' => $validated['appointment_date'],
             'appointment_time' => $validated['appointment_time'],
             'appointment_mode' => $validated['appointment_mode'],
             'status' => 'Under Review',
+            'priority' => 'Scheduled',
+            'submitted_label' => Str::limit($validated['concern'], 40) . ' • appointment ' . $validated['appointment_time'],
         ]);
 
         return redirect()->route('counselling.request')

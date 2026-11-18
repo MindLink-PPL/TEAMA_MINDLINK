@@ -160,27 +160,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the wellbeing check-ins recorded by this student.
-     */
-    public function wellbeingCheckins(): HasMany
-    {
-        return $this->hasMany(WellbeingCheckin::class);
-    }
-
-    /**
      * Get the counselling requests / appointments for this student.
      */
     public function counsellingRequests(): HasMany
     {
         return $this->hasMany(CounsellingRequest::class);
-    }
-
-    /**
-     * Get the support referrals recorded for this student.
-     */
-    public function studentReferrals(): HasMany
-    {
-        return $this->hasMany(StudentReferral::class, 'user_id');
     }
 
     /**

@@ -73,14 +73,12 @@ abstract class DuskTestCase extends BaseTestCase
     {
         parent::setUp();
 
-        if (config('database.default') === 'sqlite' && config('database.connections.sqlite.database') === ':memory:') {
+        if (config('database.default') === 'sqlite') {
             config(['database.connections.sqlite.database' => database_path('database.sqlite')]);
             DB::purge('sqlite');
         }
 
-        if (! User::where('email', 'admin@gmail.com')->exists()) {
-            $this->seed(DatabaseSeeder::class);
-        }
+        $this->seed(DatabaseSeeder::class);
 
         if (! $this->shouldStartMaximized() && ! empty(static::$browsers)) {
             $primary = collect(static::$browsers)->first();
@@ -303,12 +301,8 @@ abstract class DuskTestCase extends BaseTestCase
 
         $env = static::buildCleanEnvironment([
             'APP_URL' => 'http://127.0.0.1:8000',
-            'DB_CONNECTION' => getenv('DB_CONNECTION') ?: 'mysql',
-            'DB_HOST' => getenv('DB_HOST') ?: '127.0.0.1',
-            'DB_PORT' => getenv('DB_PORT') ?: '3308',
-            'DB_DATABASE' => getenv('DB_DATABASE') ?: 'ppl_mindlink',
-            'DB_USERNAME' => getenv('DB_USERNAME') ?: 'root',
-            'DB_PASSWORD' => getenv('DB_PASSWORD') ?: '',
+            'DB_CONNECTION' => $_ENV['DB_CONNECTION'] ?? $_SERVER['DB_CONNECTION'] ?? (getenv('DB_CONNECTION') ?: 'sqlite'),
+            'DB_DATABASE' => $basePath . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'database.sqlite',
             'CACHE_STORE' => 'file',
             'SESSION_DRIVER' => 'file',
         ]);
@@ -378,34 +372,13 @@ abstract class DuskTestCase extends BaseTestCase
 
         $driverUrl = $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? ('http://127.0.0.1:' . static::$chromeDriverPort);
 
-        // Allow teammates using ChromeDriver to set DUSK_BROWSER=chrome in their .env
-        if (env('DUSK_BROWSER', 'edge') === 'chrome') {
-            return RemoteWebDriver::create(
-                $driverUrl,
-                DesiredCapabilities::chrome()->setCapability(
-                    ChromeOptions::CAPABILITY,
-                    $options
-                )
-            );
-        }
-
-        // Default to Microsoft Edge on Windows
-        $edgeBinary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
-        if (file_exists($edgeBinary)) {
-            $options->setBinary($edgeBinary);
-        } else {
-            $edgeBinary64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
-            if (file_exists($edgeBinary64)) {
-                $options->setBinary($edgeBinary64);
-            }
-        }
-
-        $capabilities = new DesiredCapabilities([
-            WebDriverCapabilityType::BROWSER_NAME => 'MicrosoftEdge',
-            'ms:edgeOptions' => $options->toArray(),
-        ]);
-
-        return RemoteWebDriver::create($driverUrl, $capabilities);
+        return RemoteWebDriver::create(
+            $driverUrl,
+            DesiredCapabilities::chrome()->setCapability(
+                ChromeOptions::CAPABILITY,
+                $options
+            )
+        );
     }
 
     /**

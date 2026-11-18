@@ -1,17 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Article - MindLink Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-slate-50 font-sans antialiased">
-    <div class="max-w-3xl mx-auto py-10 px-6 space-y-6">
-        <a href="{{ route('admin.articles.index') }}" class="text-sm font-semibold text-teal-700 hover:underline">&larr; Back to Article Management</a>
+<x-app-layout>
+    <x-slot name="header">
+        <h1 class="text-xl sm:text-2xl font-bold text-[#0f2a4a] tracking-tight">
+            Edit Mental Health Article
+        </h1>
+    </x-slot>
 
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 space-y-5">
-            <h1 class="text-xl font-bold text-slate-900">Edit Mental Health Article</h1>
+    <div class="max-w-3xl mx-auto space-y-6">
+        <a href="{{ route('admin.articles.index') }}" class="text-sm font-semibold text-[#1c9c8c] hover:underline inline-block">&larr; Back to Article Management</a>
+
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-8 space-y-5">
+            <h2 class="text-xl font-bold text-[#0f2a4a]">Edit Mental Health Article</h2>
 
             @if($errors->any())
                 <div class="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs">
@@ -50,10 +48,9 @@
                 </div>
                 <div class="pt-2 flex justify-end space-x-3">
                     <a href="{{ route('admin.articles.index') }}" class="border border-slate-300 text-slate-700 px-5 py-2.5 rounded-xl text-sm font-medium">Cancel</a>
-                    <button type="submit" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-sm">Save Changes</button>
+                    <button type="submit" class="bg-[#1c9c8c] hover:bg-[#157a6e] text-white font-semibold px-6 py-2.5 rounded-xl text-sm shadow-2xs">Save Changes</button>
                 </div>
             </form>
         </div>
     </div>
-</body>
-</html>
+</x-app-layout>

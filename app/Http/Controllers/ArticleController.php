@@ -34,6 +34,11 @@ class ArticleController extends Controller
             $query->where('category_id', $request->input('category'));
         }
 
+        if ($request->filled('topic') && strcasecmp((string) $request->input('topic'), 'All topics') !== 0) {
+            $topic = $request->input('topic');
+            $query->whereHas('category', fn ($q) => $q->where('category_name', $topic));
+        }
+
         $articles = $query->get();
         $savedArticleIds = $this->currentUser()->savedArticles()->pluck('articles.id')->toArray();
 

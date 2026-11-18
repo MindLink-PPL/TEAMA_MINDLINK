@@ -58,7 +58,6 @@ class CounsellorController extends Controller
             'counsellor_notes' => $validated['counsellor_notes'] ?? null,
         ]);
 
-        return redirect()->route('counsellor.dashboard')
-            ->with('success', "Request #{$id} updated to {$validated['status']}.");
+        return back()->with('success', "Request #{$id} updated to {$validated['status']}.");
     }
 }

@@ -5,7 +5,29 @@
         </h1>
     </x-slot>
 
-    <div class="space-y-6">
+    <div
+        class="space-y-6"
+        x-data="{
+            selectedRequest: null,
+            notes: '',
+            modalError: '',
+            openModal(req) {
+                this.selectedRequest = req;
+                this.notes = req.counsellor_notes || '';
+                this.modalError = '';
+            },
+            isFinalized() {
+                return ['Approved', 'Declined'].includes(this.selectedRequest?.status);
+            },
+            submitDecline() {
+                if (!this.notes.trim()) {
+                    this.modalError = 'Please provide assessment or referral notes before declining a request.';
+                    return;
+                }
+                this.$refs.declineForm.submit();
+            }
+        }"
+    >
         <!-- Section Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -65,8 +87,6 @@
             @forelse ($requests as $req)
                 @php
                     $student = $req->user;
-                    $latestQuiz = $student?->wellbeingCheckins?->whereNotNull('answers')->sortByDesc('id')->first();
-                    $latestMood = $student?->wellbeingCheckins?->whereNotNull('mood')->sortByDesc('id')->first()?->mood ?? 'Okay';
                     $badgeStyle = match ($req->priority) {
                         'High priority' => 'bg-[#fff3e6] text-[#f58a42]',
                         'Scheduled', 'Follow-up', 'Completed' => 'bg-[#e6f5f0] text-[#1c9c8c]',
@@ -81,9 +101,6 @@
                                 <span class="text-base font-extrabold text-[#0f2a4a]">{{ $req->display_code }}</span>
                                 <span class="px-3 py-0.5 text-xs font-semibold rounded-full {{ $badgeStyle }}">
                                     {{ $req->priority ?: 'Scheduled' }}
-                                </span>
-                                <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-[#e6f5f0] text-[#1c9c8c]">
-                                    Consent verified
                                 </span>
                                 <span class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-slate-100 text-slate-600">
                                     {{ $req->session_mode }}
@@ -107,83 +124,37 @@
                             @endif
                         </div>
 
-                        <!-- Authorised Student Wellbeing Snapshot -->
-                        <div class="p-4 rounded-xl bg-[#f8fafc] border border-slate-200/80 min-w-[240px] space-y-1.5 text-xs">
+                        <!-- Authorised Student Snapshot + Approve/Decline Trigger -->
+                        <div class="p-4 rounded-xl bg-[#f8fafc] border border-slate-200/80 min-w-[240px] space-y-2 text-xs">
                             <div class="text-[11px] font-bold uppercase tracking-wider text-[#1c9c8c]">
                                 Authorised Student Info
                             </div>
                             <div class="flex items-center justify-between text-slate-600">
-                                <span>Check-in score:</span>
-                                <strong class="text-[#0f2a4a]">{{ $latestQuiz ? $latestQuiz->total_score . '/30' : '14/30' }}</strong>
+                                <span>Role:</span>
+                                <strong class="text-[#0f2a4a]">{{ $student?->role?->name ?? 'Student' }}</strong>
                             </div>
                             <div class="flex items-center justify-between text-slate-600">
-                                <span>Latest mood:</span>
-                                <strong class="text-[#0f2a4a]">{{ $latestMood }}</strong>
+                                <span>Session Mode:</span>
+                                <strong class="text-[#0f2a4a]">{{ $req->session_mode }}</strong>
                             </div>
                             <div class="flex items-center justify-between text-slate-600">
                                 <span>Status:</span>
-                                <strong class="text-[#1c9c8c]">{{ $req->status }}</strong>
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold {{ $req->status === 'Declined' ? 'bg-red-50 text-red-600 border border-red-200' : (in_array($req->status, ['Approved', 'Confirmed', 'Completed', 'Completed & Notified']) ? 'bg-[#e6f5f0] text-[#1c9c8c]' : 'bg-amber-50 text-amber-700') }}">
+                                    {{ $req->status }}
+                                </span>
+                            </div>
+                            <div class="pt-2 border-t border-slate-200/70">
+                                <button
+                                    type="button"
+                                    dusk="review-request-{{ $req->request_id }}"
+                                    @click="openModal({{ Js::from($req) }})"
+                                    class="w-full py-2 px-3 rounded-xl bg-[#0f2a4a] hover:bg-slate-800 text-white text-xs font-bold transition cursor-pointer"
+                                >
+                                    {{ in_array($req->status, ['Approved', 'Declined']) ? 'View Details' : 'Review & Assess' }}
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Counsellor Triage & Support Action Form -->
-                    <form method="POST" action="{{ route('counsellor.requests.update', $req) }}" class="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-                        @csrf
-                        @method('PATCH')
-
-                        <div class="sm:col-span-3">
-                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Priority / Queue State</label>
-                            <select
-                                name="priority"
-                                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-[#0f2a4a] focus:ring-[#1c9c8c]"
-                            >
-                                @foreach (['High priority', 'Scheduled', 'New', 'Follow-up', 'Completed'] as $prioOption)
-                                    <option value="{{ $prioOption }}" @selected($req->priority === $prioOption)>{{ $prioOption }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="sm:col-span-3">
-                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Session Time &amp; Mode</label>
-                            <div class="flex items-center gap-1.5">
-                                <input
-                                    type="text"
-                                    name="scheduled_time"
-                                    value="{{ $req->scheduled_time }}"
-                                    class="w-20 px-2.5 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-[#0f2a4a]"
-                                >
-                                <select
-                                    name="session_mode"
-                                    class="flex-1 px-2.5 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-[#0f2a4a]"
-                                >
-                                    <option value="In person" @selected($req->session_mode === 'In person')>In person</option>
-                                    <option value="Online" @selected($req->session_mode === 'Online')>Online</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="sm:col-span-4">
-                            <label class="block text-[11px] font-semibold text-slate-500 mb-1">Appropriate Support Action</label>
-                            <select
-                                name="support_action"
-                                class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-[#f8fafc] text-xs font-semibold text-[#0f2a4a] focus:ring-[#1c9c8c]"
-                            >
-                                @foreach ($supportActions as $action)
-                                    <option value="{{ $action }}" @selected($req->support_action === $action)>{{ $action }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="sm:col-span-2 flex justify-end">
-                            <button
-                                type="submit"
-                                class="w-full px-4 py-2 rounded-xl bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold transition shadow-2xs"
-                            >
-                                Update Support
-                            </button>
-                        </div>
-                    </form>
                 </div>
             @empty
                 <div class="bg-white rounded-2xl border border-slate-200/90 p-8 text-center">
@@ -191,6 +162,99 @@
                     <p class="text-xs text-slate-500 mt-1">Reset your filter to view all active student counselling requests.</p>
                 </div>
             @endforelse
+        </div>
+
+        <!-- Student Concern Assessment Modal (Approve / Decline) -->
+        <div x-show="selectedRequest"
+            x-transition.opacity
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto py-8"
+            style="display: none;">
+
+            <div @click.away="selectedRequest = null" class="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
+                <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-[#1c9c8c]">Request #<span x-text="selectedRequest?.request_id"></span></span>
+                        <h3 class="text-xl font-bold text-[#0f2a4a] mt-0.5">Student Concern Assessment</h3>
+                    </div>
+                    <button type="button" @click="selectedRequest = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+                </div>
+
+                <div class="space-y-4 text-sm text-slate-700">
+                    <div class="bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 space-y-3">
+                        <div>
+                            <span class="text-xs font-bold uppercase text-slate-400 block">Full Concern Description</span>
+                            <p class="text-[#0f2a4a] mt-1 whitespace-pre-line" x-text="selectedRequest?.concern"></p>
+                        </div>
+                        <template x-if="selectedRequest?.goals">
+                            <div class="pt-2 border-t border-slate-200/60">
+                                <span class="text-xs font-bold uppercase text-slate-400 block">Student Goals</span>
+                                <p class="text-slate-800 mt-1 whitespace-pre-line" x-text="selectedRequest?.goals"></p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs bg-[#e6f5f0]/60 border border-[#cdece2] rounded-xl p-3.5">
+                        <div>
+                            <span class="text-slate-400 font-semibold uppercase block">Requested Slot</span>
+                            <span class="font-bold text-[#0f2a4a]" x-text="selectedRequest?.appointment_date + ' • ' + selectedRequest?.appointment_time"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-semibold uppercase block">Session Mode</span>
+                            <span class="font-bold text-[#1c9c8c]" x-text="selectedRequest?.appointment_mode"></span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                            Counsellor Assessment / Referral Notes
+                            <span class="text-slate-400 normal-case font-normal">(Required if declining)</span>
+                        </label>
+                        <textarea rows="3"
+                            x-model="notes"
+                            @input="modalError = ''"
+                            :disabled="isFinalized()"
+                            class="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 focus:ring-2 focus:ring-[#1c9c8c] disabled:bg-slate-100 disabled:text-slate-500"
+                            placeholder="Write session preparation notes or referral instructions for the student..."></textarea>
+                        <p x-show="modalError" x-text="modalError" class="text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"></p>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t border-slate-100">
+                    <template x-if="isFinalized()">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-semibold text-slate-500">Status finalized as <strong x-text="selectedRequest?.status"></strong>.</span>
+                            <button type="button" @click="selectedRequest = null" class="px-4 py-2 rounded-xl bg-[#0f2a4a] text-white font-semibold">Close</button>
+                        </div>
+                    </template>
+
+                    <template x-if="!isFinalized()">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 mb-3">Determine Next Steps:</p>
+                            <div class="flex items-center justify-end space-x-3">
+                                <form x-ref="declineForm" :action="'/counsellor/requests/' + selectedRequest?.request_id + '/status'" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Declined">
+                                    <input type="hidden" name="counsellor_notes" :value="notes">
+                                    <button type="button" @click="submitDecline()" class="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition cursor-pointer">
+                                        Decline / Refer
+                                    </button>
+                                </form>
+
+                                <form :action="'/counsellor/requests/' + selectedRequest?.request_id + '/status'" method="POST">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="status" value="Approved">
+                                    <input type="hidden" name="counsellor_notes" :value="notes">
+                                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold shadow-2xs transition cursor-pointer">
+                                        Approve &amp; Confirm Session
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

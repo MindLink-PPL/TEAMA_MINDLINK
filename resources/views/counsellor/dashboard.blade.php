@@ -1,59 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Counsellor Dashboard - MindLink</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="bg-slate-50 font-sans antialiased">
-    <div class="flex h-screen overflow-hidden" x-data="counsellorDashboard()">
-        <aside class="w-64 bg-slate-900 text-white flex flex-col justify-between hidden md:flex">
-            <div>
-                <div class="p-6 flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-lg bg-teal-600 flex items-center justify-center font-bold text-lg text-white">M</div>
+<body class="font-sans antialiased h-full bg-[#f4f7fa] text-slate-800">
+    <div class="min-h-screen flex" x-data="counsellorDashboard()">
+        @include('layouts.navigation')
+
+        <div class="flex-1 flex flex-col min-w-0 lg:pl-64">
+            <header class="bg-white border-b border-slate-200/80 sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <button
+                        type="button"
+                        onclick="window.dispatchEvent(new CustomEvent('toggle-sidebar'))"
+                        class="lg:hidden p-2 rounded-xl text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition focus:outline-none"
+                        aria-label="Toggle Navigation"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
                     <div>
-                        <h1 class="font-bold text-lg tracking-tight">MindLink</h1>
-                        <p class="text-xs text-slate-400">Counsellor Portal</p>
+                        <h2 class="text-xl sm:text-2xl font-bold text-[#0f2a4a] tracking-tight">Counsellor Dashboard &amp; Portal</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Manage availability schedules and review incoming student counselling requests.</p>
                     </div>
                 </div>
-
-                <nav class="mt-4 px-4 space-y-1">
-                    <a href="{{ route('counsellor.dashboard') }}" class="flex items-center px-4 py-3 bg-slate-800 text-white rounded-xl font-medium shadow-sm">
-                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-teal-600 text-xs text-white font-bold">D</span>
-                        Requests Dashboard
-                    </a>
-                    <a href="{{ route('counselling.request') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
-                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-orange-400 font-bold">S</span>
-                        Student Portal &rarr;
-                    </a>
-                </nav>
-            </div>
-
-            <div class="p-4 m-4 bg-slate-800/60 rounded-2xl border border-slate-700/50 flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-full bg-teal-500 flex items-center justify-center font-bold text-white">C</div>
-                <div>
-                    <p class="text-sm font-semibold text-white">Counsellor Panel</p>
-                    <p class="text-xs text-slate-400">Authorized Access</p>
-                </div>
-            </div>
-        </aside>
-
-        <main class="flex-1 flex flex-col overflow-y-auto">
-            <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Counsellor Dashboard & Portal</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Manage availability schedules and review incoming student counselling requests.</p>
-                </div>
                 <div class="flex items-center space-x-3">
-                    <div class="bg-teal-50 text-teal-800 border border-teal-200 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm">
+                    <div class="bg-[#e6f5f0] text-[#1c9c8c] border border-[#cdece2] px-4 py-1.5 rounded-full text-xs font-semibold shadow-2xs">
                         Total Requests: {{ $requests->count() }}
                     </div>
                 </div>
             </header>
 
-            <div class="p-8 max-w-7xl mx-auto w-full space-y-8">
+            <main class="flex-1 p-6 sm:p-8 max-w-7xl w-full mx-auto space-y-8">
                 @if ($errors->any())
                     <div class="bg-red-50 border border-red-200 text-red-800 px-5 py-3.5 rounded-xl text-sm shadow-sm">
                         <ul class="list-disc pl-5 text-xs space-y-0.5">
@@ -198,8 +183,8 @@
                         </div>
                     @endif
                 </div>
-            </div>
-        </main>
+            </main>
+        </div>
 
         {{-- MODAL COMPONENT FOR YOUR REVIEW SYSTEM --}}
         <div x-show="selectedRequest" 

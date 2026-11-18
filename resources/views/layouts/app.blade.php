@@ -41,7 +41,7 @@
                                 {{ $header }}
                             @else
                                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                                    {{ Auth::user()->isAdmin() ? 'Administrative Dashboard' : (Auth::user()->isCounsellor() ? 'Counsellor Workspace' : 'Student Dashboard') }}
+                                    {{ Auth::user()?->isAdmin() ? 'Administrative Dashboard' : (Auth::user()?->isCounsellor() ? 'Counsellor Workspace' : 'Student Dashboard') }}
                                 </h1>
                             @endisset
                         </div>
@@ -50,7 +50,7 @@
                     <!-- Right Portal Pill (Matching Figma: "Admin portal", "Counsellor portal", "Student portal") -->
                     <div class="flex items-center gap-3">
                         <span class="inline-flex items-center px-3.5 py-1 rounded-full text-xs font-semibold border border-slate-200 bg-white text-slate-600 shadow-2xs">
-                            {{ Auth::user()->portal_name }}
+                            {{ Auth::user()?->portal_name ?? 'Student portal' }}
                         </span>
                     </div>
                 </header>

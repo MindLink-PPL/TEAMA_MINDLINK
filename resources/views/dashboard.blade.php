@@ -288,8 +288,27 @@
             x-data="{
                 queue: {{ \Illuminate\Support\Js::from($queueList) }},
                 selectedCode: 'ST-187',
+                filterStatus: 'All',
+                selectedRequest: null,
+                notes: '',
+                modalError: '',
                 get selectedItem() {
                     return this.queue.find(i => i.code === this.selectedCode) || this.queue[1] || this.queue[0];
+                },
+                openModal(req) {
+                    this.selectedRequest = req;
+                    this.notes = req.counsellor_notes || '';
+                    this.modalError = '';
+                },
+                isFinalized() {
+                    return ['Approved', 'Declined'].includes(this.selectedRequest?.status);
+                },
+                submitDecline() {
+                    if (!this.notes.trim()) {
+                        this.modalError = 'Please provide assessment or referral notes before declining a request.';
+                        return;
+                    }
+                    this.$refs.declineForm.submit();
                 }
             }"
         >
@@ -322,7 +341,7 @@
                     <div class="text-xs text-slate-500 mt-4">Next session at 10:00</div>
                 </a>
 
-                <a href="{{ route('counsellor.referrals') }}" class="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-sm transition block">
+                <a href="{{ route('counsellor.requests', ['priority' => 'Follow-up']) }}" class="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-sm transition block">
                     <div class="text-xs font-medium text-slate-600">Follow-ups due</div>
                     <div class="text-4xl font-extrabold text-[#0f2a4a] mt-2">{{ $followUpsDueCount ?? 3 }}</div>
                     <div class="text-xs text-slate-500 mt-4">Complete before 16:00</div>
@@ -397,13 +416,13 @@
                         <div class="mb-4 p-3.5 rounded-xl bg-[#f8fafc] border border-slate-200/80 space-y-1.5 text-xs">
                             <div class="flex items-center justify-between">
                                 <span class="font-bold text-[#0f2a4a]" x-text="selectedItem.student_name">Student</span>
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
-                                    Consent verified
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#e6f5f0] text-[#1c9c8c]" x-text="selectedItem.session_mode">
+                                    In person
                                 </span>
                             </div>
                             <div class="text-slate-600 flex items-center justify-between">
-                                <span>Wellbeing reflection: <strong class="text-[#0f2a4a]" x-text="selectedItem.wellbeing_score + '/30'">14/30</strong></span>
-                                <span>Mood: <strong class="text-[#0f2a4a]" x-text="selectedItem.wellbeing_mood">Okay</strong></span>
+                                <span x-text="selectedItem.student_email">student@mindlink.com</span>
+                                <span class="font-semibold text-[#0f2a4a]" x-text="selectedItem.priority">Scheduled</span>
                             </div>
                             <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-200/70" x-text="selectedItem.student_notes">
                                 Experiencing difficulty concentrating ahead of mid-semester deadlines.
@@ -455,6 +474,228 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Time Availability Management (My Availability Slots) -->
+            <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
+                <h3 class="text-lg font-bold text-[#0f2a4a] mb-1">My Availability Slots</h3>
+                <p class="text-xs text-slate-500 mb-6">Set the dates and times when students can book appointments with you.</p>
+
+                <form action="{{ route('counsellor.availability.store') }}" method="POST" class="border border-slate-200 rounded-2xl p-5 mb-6 bg-[#f8fafc]">
+                    @csrf
+                    <h4 class="font-semibold text-xs uppercase tracking-wider text-slate-700 mb-4">Add New Availability</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Available Date</label>
+                            <input type="date" name="date" min="{{ date('Y-m-d') }}" value="{{ old('date') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">Start Time</label>
+                            <input type="time" name="start_time" value="{{ old('start_time') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1.5">End Time</label>
+                            <input type="time" name="end_time" value="{{ old('end_time') }}" required class="w-full border border-slate-300 rounded-xl p-3 text-xs bg-white">
+                        </div>
+                    </div>
+                    <button type="submit" class="bg-[#0f2a4a] text-white text-xs font-bold px-5 py-2.5 rounded-xl mt-4 hover:bg-slate-800 transition cursor-pointer">
+                        + Add Availability Slot
+                    </button>
+                </form>
+
+                <div class="space-y-3">
+                    @forelse ($availabilities ?? [] as $availability)
+                        <div class="border border-slate-200 rounded-xl p-4 flex justify-between items-center bg-white">
+                            <div>
+                                <p class="font-semibold text-sm text-[#0f2a4a]">{{ \Carbon\Carbon::parse($availability->date)->format('d M Y') }}</p>
+                                <p class="text-xs text-slate-500">{{ \Carbon\Carbon::parse($availability->time)->format('h:i A') }}</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span class="bg-[#e6f5f0] text-[#1c9c8c] border border-[#cdece2] px-3 py-1 rounded-full text-xs font-bold">Available</span>
+                                <form action="{{ route('counsellor.availability.destroy', $availability->id) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="bg-red-50 text-red-700 border border-red-200 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-red-100 transition cursor-pointer">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-xs text-slate-500 italic">No availability slots added yet.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <!-- Student Counselling Requests & Review/Approve/Decline Table -->
+            <div class="space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <h3 class="text-lg font-bold text-[#0f2a4a]">Student Counselling Requests</h3>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <template x-for="tab in ['All', 'Under Review', 'Approved', 'Declined']">
+                            <button type="button"
+                                @click="filterStatus = tab"
+                                :class="filterStatus === tab ? 'bg-[#0f2a4a] text-white shadow-2xs' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'"
+                                class="px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer"
+                                x-text="tab">
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                @if(empty($requests) || $requests->isEmpty())
+                    <div class="bg-white rounded-2xl border border-slate-200/90 p-10 text-center space-y-2 shadow-2xs">
+                        <h3 class="text-base font-bold text-[#0f2a4a]">No requests found</h3>
+                        <p class="text-xs text-slate-500">When students submit requests through the portal, they will appear here for review.</p>
+                    </div>
+                @else
+                    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-[#f8fafc] border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-semibold">
+                                        <th class="p-4"># ID</th>
+                                        <th class="p-4">Counsellor</th>
+                                        <th class="p-4">Concern Summary</th>
+                                        <th class="p-4">Schedule</th>
+                                        <th class="p-4">Status</th>
+                                        <th class="p-4 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                                    @foreach($requests as $req)
+                                        <tr x-show="filterStatus === 'All' || filterStatus === '{{ $req->status ?? 'Under Review' }}'" class="hover:bg-slate-50/60 transition">
+                                            <td class="p-4 font-bold text-[#0f2a4a]">#{{ $req->request_id }}</td>
+                                            <td class="p-4 font-semibold text-[#1c9c8c]">{{ $req->counsellor_name }}</td>
+                                            <td class="p-4 max-w-xs">
+                                                <p class="font-medium text-[#0f2a4a] truncate">{{ $req->concern }}</p>
+                                                @if($req->goals)
+                                                    <p class="text-xs text-slate-500 truncate">Goals: {{ $req->goals }}</p>
+                                                @endif
+                                                @if($req->counsellor_notes)
+                                                    <p class="text-[11px] text-[#1c9c8c] truncate mt-0.5">Note: {{ $req->counsellor_notes }}</p>
+                                                @endif
+                                            </td>
+                                            <td class="p-4 text-xs space-y-0.5">
+                                                <p class="font-semibold text-[#0f2a4a]">{{ $req->appointment_date }} at {{ $req->appointment_time }}</p>
+                                                <span class="inline-block bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">{{ $req->appointment_mode }}</span>
+                                            </td>
+                                            <td class="p-4">
+                                                <span class="inline-block px-3 py-1 rounded-full text-xs font-bold border
+                                                    {{ $req->status === 'Approved' ? 'bg-teal-50 text-teal-700 border-teal-200' : '' }}
+                                                    {{ $req->status === 'Declined' ? 'bg-red-50 text-red-700 border-red-200' : '' }}
+                                                    {{ !in_array($req->status, ['Approved', 'Declined']) ? 'bg-amber-50 text-amber-700 border-amber-200' : '' }}">
+                                                    {{ $req->status ?? 'Under Review' }}
+                                                </span>
+                                            </td>
+                                            <td class="p-4 text-right">
+                                                <button type="button"
+                                                    dusk="review-request-{{ $req->request_id }}"
+                                                    @click="openModal({{ Js::from($req) }})"
+                                                    class="bg-[#0f2a4a] hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer">
+                                                    {{ in_array($req->status, ['Approved', 'Declined']) ? 'View Details' : 'Review & Assess' }}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Student Concern Assessment Modal (Approve / Decline) -->
+            <div x-show="selectedRequest"
+                x-transition.opacity
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto py-8"
+                style="display: none;">
+
+                <div @click.away="selectedRequest = null" class="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto my-auto">
+                    <div class="flex justify-between items-start border-b border-slate-100 pb-4">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-[#1c9c8c]">Request #<span x-text="selectedRequest?.request_id"></span></span>
+                            <h3 class="text-xl font-bold text-[#0f2a4a] mt-0.5">Student Concern Assessment</h3>
+                        </div>
+                        <button type="button" @click="selectedRequest = null" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+                    </div>
+
+                    <div class="space-y-4 text-sm text-slate-700">
+                        <div class="bg-[#f8fafc] border border-slate-200/80 rounded-2xl p-4 space-y-3">
+                            <div>
+                                <span class="text-xs font-bold uppercase text-slate-400 block">Full Concern Description</span>
+                                <p class="text-[#0f2a4a] mt-1 whitespace-pre-line" x-text="selectedRequest?.concern"></p>
+                            </div>
+                            <template x-if="selectedRequest?.goals">
+                                <div class="pt-2 border-t border-slate-200/60">
+                                    <span class="text-xs font-bold uppercase text-slate-400 block">Student Goals</span>
+                                    <p class="text-slate-800 mt-1 whitespace-pre-line" x-text="selectedRequest?.goals"></p>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-xs bg-[#e6f5f0]/60 border border-[#cdece2] rounded-xl p-3.5">
+                            <div>
+                                <span class="text-slate-400 font-semibold uppercase block">Requested Slot</span>
+                                <span class="font-bold text-[#0f2a4a]" x-text="selectedRequest?.appointment_date + ' • ' + selectedRequest?.appointment_time"></span>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 font-semibold uppercase block">Session Mode</span>
+                                <span class="font-bold text-[#1c9c8c]" x-text="selectedRequest?.appointment_mode"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-1.5">
+                                Counsellor Assessment / Referral Notes
+                                <span class="text-slate-400 normal-case font-normal">(Required if declining)</span>
+                            </label>
+                            <textarea rows="3"
+                                x-model="notes"
+                                @input="modalError = ''"
+                                :disabled="isFinalized()"
+                                class="w-full rounded-xl border border-slate-300 p-3 text-xs text-slate-800 focus:ring-2 focus:ring-[#1c9c8c] disabled:bg-slate-100 disabled:text-slate-500"
+                                placeholder="Write session preparation notes or referral instructions for the student..."></textarea>
+                            <p x-show="modalError" x-text="modalError" class="text-xs font-semibold text-red-600 mt-2 bg-red-50 border border-red-200 px-3 py-2 rounded-lg"></p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100">
+                        <template x-if="isFinalized()">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="font-semibold text-slate-500">Status finalized as <strong x-text="selectedRequest?.status"></strong>.</span>
+                                <button type="button" @click="selectedRequest = null" class="px-4 py-2 rounded-xl bg-[#0f2a4a] text-white font-semibold">Close</button>
+                            </div>
+                        </template>
+
+                        <template x-if="!isFinalized()">
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500 mb-3">Determine Next Steps:</p>
+                                <div class="flex items-center justify-end space-x-3">
+                                    <form x-ref="declineForm" :action="'/counsellor/requests/' + selectedRequest?.request_id + '/status'" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="Declined">
+                                        <input type="hidden" name="counsellor_notes" :value="notes">
+                                        <button type="button" @click="submitDecline()" class="px-4 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold transition cursor-pointer">
+                                            Decline / Refer
+                                        </button>
+                                    </form>
+
+                                    <form :action="'/counsellor/requests/' + selectedRequest?.request_id + '/status'" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="status" value="Approved">
+                                        <input type="hidden" name="counsellor_notes" :value="notes">
+                                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold shadow-2xs transition cursor-pointer">
+                                            Approve &amp; Confirm Session
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
         </div>
 
     @else
@@ -478,7 +719,7 @@
                         </p>
                     </div>
                     <div class="mt-4">
-                        <a href="{{ route('student.wellbeing') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#1c9c8c] hover:text-[#0f766e] transition">
+                        <a href="{{ route('quiz.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#1c9c8c] hover:text-[#0f766e] transition">
                             <span>Start check-in</span>
                             <span>&gt;</span>
                         </a>
@@ -494,7 +735,7 @@
                         </p>
                     </div>
                     <div class="mt-4">
-                        <a href="{{ route('student.counselling') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#0f2a4a] hover:text-[#1c9c8c] transition">
+                        <a href="{{ route('counselling.request') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#0f2a4a] hover:text-[#1c9c8c] transition">
                             <span>Request support</span>
                             <span>&gt;</span>
                         </a>
@@ -510,7 +751,7 @@
                         </p>
                     </div>
                     <div class="mt-4">
-                        <a href="{{ route('student.literacy') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#f58a42] hover:text-[#ea580c] transition">
+                        <a href="{{ route('articles.index') }}" class="inline-flex items-center gap-1 text-xs font-bold text-[#f58a42] hover:text-[#ea580c] transition">
                             <span>Browse articles</span>
                             <span>&gt;</span>
                         </a>
@@ -518,109 +759,69 @@
                 </div>
             </div>
 
-            <!-- Bottom Grid: How are you feeling today? (Left) & Upcoming appointment + Need urgent help? (Right) -->
+            <!-- Bottom Grid: Role & Access Boundary (Left) & Upcoming appointment + Need urgent help? (Right) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <!-- Left Column: Wellbeing reflection prompt -->
-                <div
-                    class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-2xs flex flex-col justify-between"
-                    x-data="{ selectedMood: '{{ $latestMood ?? 'Good' }}' }"
-                >
-                    <form method="POST" action="{{ route('student.mood.store') }}">
-                        @csrf
-                        <input type="hidden" name="mood" :value="selectedMood">
-
-                        <h3 class="text-lg font-bold text-[#0f2a4a]">How are you feeling today?</h3>
-                        <p class="text-xs text-slate-500 mt-1 mb-7">Your answer stays private and can be changed later.</p>
-
-                        <div class="grid grid-cols-5 gap-3 sm:gap-5 max-w-lg">
-                            <!-- Very low -->
-                            <button
-                                type="button"
-                                @click="selectedMood = 'Very low'"
-                                class="flex flex-col items-center group focus:outline-none"
-                            >
-                                <span
-                                    :class="selectedMood === 'Very low' ? 'ring-4 ring-[#d9534f]/30 scale-110' : 'opacity-90 hover:scale-105'"
-                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#d9534f] transition transform block shadow-2xs"
-                                ></span>
-                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Very low</span>
-                            </button>
-
-                            <!-- Low -->
-                            <button
-                                type="button"
-                                @click="selectedMood = 'Low'"
-                                class="flex flex-col items-center group focus:outline-none"
-                            >
-                                <span
-                                    :class="selectedMood === 'Low' ? 'ring-4 ring-[#f58a42]/30 scale-110' : 'opacity-90 hover:scale-105'"
-                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#f58a42] transition transform block shadow-2xs"
-                                ></span>
-                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Low</span>
-                            </button>
-
-                            <!-- Okay -->
-                            <button
-                                type="button"
-                                @click="selectedMood = 'Okay'"
-                                class="flex flex-col items-center group focus:outline-none"
-                            >
-                                <span
-                                    :class="selectedMood === 'Okay' ? 'ring-4 ring-[#e5b84b]/30 scale-110' : 'opacity-90 hover:scale-105'"
-                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#e5b84b] transition transform block shadow-2xs"
-                                ></span>
-                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Okay</span>
-                            </button>
-
-                            <!-- Good -->
-                            <button
-                                type="button"
-                                @click="selectedMood = 'Good'"
-                                class="flex flex-col items-center group focus:outline-none"
-                            >
-                                <span
-                                    :class="selectedMood === 'Good' ? 'ring-4 ring-[#489e64]/30 scale-110' : 'opacity-90 hover:scale-105'"
-                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#489e64] transition transform block shadow-2xs"
-                                ></span>
-                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Good</span>
-                            </button>
-
-                            <!-- Great -->
-                            <button
-                                type="button"
-                                dusk="mood-great"
-                                @click="selectedMood = 'Great'"
-                                class="flex flex-col items-center group focus:outline-none"
-                            >
-                                <span
-                                    :class="selectedMood === 'Great' ? 'ring-4 ring-[#1c9c8c]/30 scale-110' : 'opacity-90 hover:scale-105'"
-                                    class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#1c9c8c] transition transform block shadow-2xs"
-                                ></span>
-                                <span class="text-[11px] font-medium text-slate-500 mt-2.5">Great</span>
-                            </button>
+                <!-- Left Column: Student Role & Permissions Card -->
+                <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-2xs flex flex-col justify-between space-y-4">
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-[#0f2a4a]">Your Student Access &amp; Privacy</h3>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
+                                {{ Auth::user()->role?->name ?? 'Student' }} Role
+                            </span>
                         </div>
+                        <p class="text-xs text-slate-500 mt-1">
+                            {{ Auth::user()->role?->description ?? 'Access student-specific features to manage your wellbeing and counselling activities securely.' }}
+                        </p>
+                    </div>
 
-                        <div class="mt-8">
-                            <button
-                                type="submit"
-                                class="px-5 py-2.5 bg-[#1c9c8c] hover:bg-[#157a6e] text-white text-xs font-bold rounded-xl transition shadow-2xs"
-                            >
-                                Save response
-                            </button>
-                        </div>
-                    </form>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
+                        @foreach (Auth::user()->permissions as $perm)
+                            <div class="p-3 rounded-xl bg-[#f8fafc] border border-slate-200/80 text-xs">
+                                <div class="font-bold text-[#0f2a4a]">{{ $perm->name }}</div>
+                                <div class="text-[11px] text-slate-500 mt-0.5">{{ $perm->module }}</div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
 
                 <!-- Right Column: Upcoming appointment + Need urgent help? -->
                 <div class="lg:col-span-5 space-y-5">
                     <!-- Top Card: Upcoming appointment -->
                     <div class="bg-white rounded-2xl border border-slate-200/90 p-6 shadow-2xs">
-                        <h3 class="text-lg font-bold text-[#0f2a4a]">Upcoming appointment</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold text-[#0f2a4a]">Upcoming appointment</h3>
+                            <a href="{{ route('counselling.request') }}" class="text-xs font-bold text-[#1c9c8c] hover:underline">Manage &rarr;</a>
+                        </div>
 
-                        <div class="mt-2.5">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-[#e6f5f0] text-[#1c9c8c]">
-                                {{ $upcomingAppointment?->status ?? 'Confirmed' }}
+                        @php
+                            $apptStatus = $upcomingAppointment?->status ?? 'Confirmed';
+                            $canCancelUpcoming = $upcomingAppointment && !in_array($apptStatus, ['Confirmed', 'Approved', 'Declined', 'Cancelled', 'Completed', 'Completed & Notified'], true);
+                            $apptBadgeStyle = match (true) {
+                                in_array($apptStatus, ['Declined', 'Cancelled'], true) => 'bg-red-50 text-red-600 border border-red-200',
+                                in_array($apptStatus, ['Confirmed', 'Approved', 'Completed', 'Completed & Notified'], true) => 'bg-[#e6f5f0] text-[#1c9c8c]',
+                                default => 'bg-amber-50 text-amber-700 border border-amber-200',
+                            };
+                        @endphp
+
+                        <div class="mt-2.5 flex items-center justify-between gap-2">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $apptBadgeStyle }}">
+                                {{ $apptStatus }}
                             </span>
+
+                            @if ($canCancelUpcoming)
+                                <form action="{{ route('counselling.cancel', $upcomingAppointment) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button
+                                        type="submit"
+                                        dusk="dashboard-cancel-request-{{ $upcomingAppointment->id }}"
+                                        class="px-3 py-1 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs transition cursor-pointer"
+                                    >
+                                        Cancel Request
+                                    </button>
+                                </form>
+                            @endif
                         </div>
 
                         <div class="mt-3 text-sm font-bold text-[#0f2a4a]">

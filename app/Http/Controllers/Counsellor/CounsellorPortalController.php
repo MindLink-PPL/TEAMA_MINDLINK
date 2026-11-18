@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Counsellor;
 
 use App\Http\Controllers\Controller;
+use App\Models\Availability;
 use App\Models\CounsellingRequest;
-use App\Models\StudentReferral;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,11 +13,34 @@ use Illuminate\View\View;
 class CounsellorPortalController extends Controller
 {
     /**
+     * Display the unified role-based portal dashboard (PG-01 Student, PG-05 Counsellor, PG-06 Admin).
+     */
+    public function dashboard(): View
+    {
+        $user = auth()->user()->load('role.permissions');
+        $upcomingAppointment = null;
+        $studentRequests = collect();
+        $counsellorData = [];
+
+        if ($user->isStudent()) {
+            $studentRequests = $user->counsellingRequests()->latest()->get();
+            $upcomingAppointment = $studentRequests->first();
+        } elseif ($user->isCounsellor()) {
+            $counsellorData = self::getWorkspaceData();
+        }
+
+        return view('dashboard', array_merge(
+            compact('user', 'upcomingAppointment', 'studentRequests'),
+            $counsellorData
+        ));
+    }
+
+    /**
      * Build the shared Counsellor Workspace dataset (used by /dashboard and /counsellor/workspace).
      */
     public static function getWorkspaceData(): array
     {
-        $requests = CounsellingRequest::with(['user.wellbeingCheckins'])
+        $requests = CounsellingRequest::with(['user'])
             ->get()
             ->sortBy(function (CounsellingRequest $req) {
                 // Keep PG-05 canonical order at the top (ST-204, ST-187, ST-221, ST-163), then newest
@@ -28,21 +51,15 @@ class CounsellorPortalController extends Controller
                     'ST-163' => 4,
                 ];
 
-                return $order[$req->student_code] ?? (100 - $req->id);
+                $rank = $order[$req->student_code] ?? 99;
+                $tieBreaker = $req->student_code && isset($order[$req->student_code]) ? $req->id : (10000 - $req->id);
+
+                return sprintf('%03d-%06d', $rank, $tieBreaker);
             })
             ->values();
 
         $queueItems = $requests->map(function (CounsellingRequest $req) {
             $student = $req->user;
-            $latestQuiz = $student?->wellbeingCheckins
-                ?->whereNotNull('answers')
-                ->sortByDesc('id')
-                ->first();
-            $latestMoodCheckin = $student?->wellbeingCheckins
-                ?->whereNotNull('mood')
-                ->sortByDesc('id')
-                ->first();
-
             $code = $req->display_code;
             $priority = $req->priority ?: 'Scheduled';
             $submittedLabel = $req->submitted_label ?: ($req->concern . ' • appointment ' . $req->scheduled_time);
@@ -61,27 +78,30 @@ class CounsellorPortalController extends Controller
                 'student_name' => $student?->name ?? 'Authorised Student',
                 'student_email' => $student?->email ?? 'student@mindlink.com',
                 'student_notes' => $req->notes ?: 'Student requested confidential counselling support.',
-                'consent_verified' => $req->consent_accepted_at !== null,
-                'consent_date' => $req->consent_accepted_at ? $req->consent_accepted_at->format('d M Y') : '13 Oct 2026',
-                'wellbeing_score' => $latestQuiz ? $latestQuiz->total_score : 14,
-                'wellbeing_mood' => $latestMoodCheckin?->mood ?? ($latestQuiz?->mood ?? 'Okay'),
-                'wellbeing_guidance' => $latestQuiz?->guidance ?? 'Authorised wellbeing reflection available for counsellor review.',
                 'session_note' => $req->session_note ?? '',
                 'note_status' => $req->note_status ?: 'none',
                 'support_action' => $req->support_action ?: 'Individual Counselling & Coping Support',
                 'notified' => $req->student_notified_at !== null,
             ];
-        })->values();
+        })->unique('code')->values();
 
         $activeRequest = $queueItems->firstWhere('code', 'ST-187') ?? $queueItems->first();
+        $availabilities = auth()->check()
+            ? Availability::where('counsellor_id', auth()->id())
+                ->orderBy('date')
+                ->orderBy('time')
+                ->get()
+            : collect();
 
         return [
             'counsellorQueue' => $queueItems,
             'activeCounsellorRequest' => $activeRequest,
+            'requests' => CounsellingRequest::orderBy('created_at', 'desc')->get(),
+            'availabilities' => $availabilities,
             'highPriorityCount' => max(2, $requests->where('priority', 'High priority')->count()),
             'pendingRequestsCount' => max(7, $requests->count()),
             'todaysSessionsCount' => max(4, $requests->whereIn('priority', ['Scheduled', 'High priority'])->count()),
-            'followUpsDueCount' => max(3, $requests->where('follow_up_due', true)->count() + StudentReferral::where('status', '!=', 'Completed')->count()),
+            'followUpsDueCount' => max(3, $requests->where('follow_up_due', true)->count()),
         ];
     }
 
@@ -97,7 +117,6 @@ class CounsellorPortalController extends Controller
             [
                 'user' => $user,
                 'upcomingAppointment' => null,
-                'latestMood' => null,
             ],
             $workspaceData
         ));
@@ -111,7 +130,7 @@ class CounsellorPortalController extends Controller
         $selectedPriority = $request->query('priority', 'All');
         $search = trim((string) $request->query('search', ''));
 
-        $query = CounsellingRequest::with(['user.wellbeingCheckins'])->latest();
+        $query = CounsellingRequest::with(['user'])->latest();
 
         if ($selectedPriority !== 'All') {
             $query->where('priority', $selectedPriority);
@@ -217,10 +236,14 @@ class CounsellorPortalController extends Controller
             $counsellingRequest = CounsellingRequest::find($validated['counselling_request_id']);
         }
         if (! $counsellingRequest && ! empty($validated['student_code'])) {
-            $counsellingRequest = CounsellingRequest::where('student_code', $validated['student_code'])->first();
+            $counsellingRequest = CounsellingRequest::where('student_code', $validated['student_code'])
+                ->orderBy('id')
+                ->first();
         }
         if (! $counsellingRequest) {
-            $counsellingRequest = CounsellingRequest::where('student_code', 'ST-187')->first()
+            $counsellingRequest = CounsellingRequest::where('student_code', 'ST-187')
+                ->orderBy('id')
+                ->first()
                 ?? CounsellingRequest::first();
         }
 
@@ -259,14 +282,22 @@ class CounsellorPortalController extends Controller
      */
     public function schedule(): View
     {
-        $appointments = CounsellingRequest::with(['user.wellbeingCheckins'])
+        $appointments = CounsellingRequest::with(['user'])
             ->orderBy('scheduled_time')
             ->get();
+
+        $availabilities = auth()->check()
+            ? Availability::where('counsellor_id', auth()->id())
+                ->orderBy('date')
+                ->orderBy('time')
+                ->get()
+            : collect();
 
         $timeSlots = ['09:00', '10:00', '13:30', '15:00'];
 
         return view('counsellor.schedule', [
             'appointments' => $appointments,
+            'availabilities' => $availabilities,
             'timeSlots' => $timeSlots,
         ]);
     }
@@ -281,9 +312,7 @@ class CounsellorPortalController extends Controller
         $studentsQuery = User::whereHas('role', function ($q) {
             $q->whereIn('slug', ['user', 'student']);
         })->with([
-            'wellbeingCheckins' => fn ($q) => $q->latest(),
             'counsellingRequests' => fn ($q) => $q->latest(),
-            'studentReferrals' => fn ($q) => $q->latest(),
         ]);
 
         if ($search !== '') {
@@ -298,93 +327,10 @@ class CounsellorPortalController extends Controller
         }
 
         $students = $studentsQuery->get();
-        $quizQuestions = \App\Http\Controllers\Student\StudentPortalController::getQuizQuestions();
 
         return view('counsellor.records', [
             'students' => $students,
             'search' => $search,
-            'quizQuestions' => $quizQuestions,
         ]);
-    }
-
-    /**
-     * Display Student Support Referrals & Follow-Ups page (F - Referrals).
-     */
-    public function referrals(): View
-    {
-        $referrals = StudentReferral::with(['student', 'counsellor', 'counsellingRequest'])
-            ->latest()
-            ->get();
-
-        $students = User::whereHas('role', function ($q) {
-            $q->whereIn('slug', ['user', 'student']);
-        })->with('counsellingRequests')->get();
-
-        $referralTypes = [
-            'Academic Support & Assessment Consideration',
-            'Study Skills & Stress Management Workshop',
-            'Sleep & Wellbeing Clinic',
-            'Peer Mentorship & Social Connection',
-            'Specialist Clinical Assessment',
-        ];
-
-        return view('counsellor.referrals', [
-            'referrals' => $referrals,
-            'students' => $students,
-            'referralTypes' => $referralTypes,
-        ]);
-    }
-
-    /**
-     * Create a new student support referral / follow-up plan.
-     */
-    public function storeReferral(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'user_id' => ['required', 'integer', 'exists:users,id'],
-            'referral_type' => ['required', 'string', 'max:255'],
-            'urgency' => ['required', 'string', 'in:High priority,Standard,Follow-up'],
-            'reason' => ['required', 'string', 'max:1000'],
-            'support_plan' => ['required', 'string', 'max:1500'],
-        ]);
-
-        $student = User::with('counsellingRequests')->findOrFail($validated['user_id']);
-        $latestRequest = $student->counsellingRequests->first();
-        $studentCode = $latestRequest?->student_code ?: ('ST-' . (180 + $student->id));
-
-        StudentReferral::create([
-            'user_id' => $student->id,
-            'counsellor_id' => $request->user()->id,
-            'counselling_request_id' => $latestRequest?->id,
-            'student_code' => $studentCode,
-            'referral_type' => $validated['referral_type'],
-            'urgency' => $validated['urgency'],
-            'reason' => $validated['reason'],
-            'support_plan' => $validated['support_plan'],
-            'status' => 'Active',
-        ]);
-
-        return redirect()
-            ->route('counsellor.referrals')
-            ->with('success', "Created support referral ({$validated['referral_type']}) for {$student->name} ({$studentCode}).");
-    }
-
-    /**
-     * Update the status of a student referral.
-     */
-    public function updateReferral(Request $request, StudentReferral $referral): RedirectResponse
-    {
-        $validated = $request->validate([
-            'status' => ['required', 'string', 'in:Active,Follow-up due,Completed'],
-            'support_plan' => ['nullable', 'string', 'max:1500'],
-        ]);
-
-        $referral->status = $validated['status'];
-        if (! empty($validated['support_plan'])) {
-            $referral->support_plan = $validated['support_plan'];
-        }
-        $referral->save();
-
-        return back()->with('success', "Updated referral status for {$referral->student_code} to {$referral->status}.");
     }
 }

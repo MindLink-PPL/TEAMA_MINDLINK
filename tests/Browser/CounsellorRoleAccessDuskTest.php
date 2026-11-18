@@ -36,15 +36,12 @@ class CounsellorRoleAccessDuskTest extends DuskTestCase
                 ->assertSee('ST-187')
                 ->click('@queue-item-ST-204')
                 ->assertSee('ST-204 • Appointment 10:00')
-                ->assertSee('Consent verified')
-                ->assertSee('21/30')
-                ->assertSee('Low')
+                ->assertSee('Alex Rivera (Student)')
                 // Step 4: Verify sidebar navigation links
                 ->assertSee('Workspace')
                 ->assertSee('Requests')
                 ->assertSee('Schedule')
-                ->assertSee('Records')
-                ->assertSee('Referrals');
+                ->assertSee('Records');
         });
     }
 
@@ -82,28 +79,54 @@ class CounsellorRoleAccessDuskTest extends DuskTestCase
 
     /**
      * PBI #5 — TC.CounsellorRole.003 (Positive):
-     * Counsellor filters request queue and updates a student's priority and support action.
+     * Counsellor filters request queue and declines a student concern request with assessment notes.
      */
     public function test_tc_counsellor_role_003_counsellor_filters_request_queue_and_updates_student_support_plan(): void
     {
-        $this->browse(function (Browser $browser) {
-            $counsellor = User::where('email', 'counsellor@gmail.com')->firstOrFail();
+        $declineReq = CounsellingRequest::create([
+            'student_id' => 1,
+            'student_code' => 'ST-299',
+            'counsellor_name' => 'Alisa',
+            'concern' => 'Dusk decline test: scheduling conflict with laboratory exam.',
+            'appointment_date' => now()->addDays(6)->format('Y-m-d'),
+            'appointment_time' => '13:30',
+            'appointment_mode' => 'In person',
+            'priority' => 'High priority',
+            'status' => 'Under Review',
+        ]);
 
-            $browser->loginAs($counsellor)
-                // Step 1: Visit /counsellor/requests
-                ->visit('/counsellor/requests')
-                ->assertPathIs('/counsellor/requests')
-                ->assertSee('Counselling Requests')
-                ->assertSee('Request queue & triage')
-                ->assertSee('Authorised Student Info')
-                ->assertSee('ST-204')
-                // Step 2: Filter requests by clicking "High priority" pill
-                ->clickLink('High priority')
-                ->assertSee('ST-204')
-                // Step 3: Click "Update Support" and verify flash message
-                ->press('Update Support')
-                ->assertSee('Updated counselling request');
-        });
+        try {
+            $this->browse(function (Browser $browser) use ($declineReq) {
+                $counsellor = User::where('email', 'counsellor@gmail.com')->firstOrFail();
+
+                $browser->loginAs($counsellor)
+                    // Step 1: Visit /counsellor/requests
+                    ->visit('/counsellor/requests')
+                    ->assertPathIs('/counsellor/requests')
+                    ->assertSee('Counselling Requests')
+                    ->assertSee('Request queue & triage')
+                    ->assertSee('Authorised Student Info')
+                    ->assertSee('ST-204')
+                    // Step 2: Filter requests by clicking "High priority" pill
+                    ->clickLink('High priority')
+                    ->assertSee('ST-204')
+                    ->assertSee('ST-299')
+                    // Step 3: Click "Review & Assess" and decline with assessment notes
+                    ->click("@review-request-{$declineReq->request_id}")
+                    ->waitForText('Student Concern Assessment')
+                    ->type('textarea[placeholder*="Write session preparation notes"]', 'Please reschedule after your laboratory exam concludes.')
+                    ->press('Decline / Refer')
+                    ->assertSee("Request #{$declineReq->request_id} updated to Declined.")
+                    ->assertSee('Declined');
+            });
+
+            $this->assertDatabaseHas('counselling_requests', [
+                'id' => $declineReq->id,
+                'status' => 'Declined',
+            ]);
+        } finally {
+            $declineReq->delete();
+        }
     }
 
     /**
@@ -121,53 +144,81 @@ class CounsellorRoleAccessDuskTest extends DuskTestCase
                 ->assertPathIs('/counsellor/records')
                 ->assertSee('Authorised Student Records')
                 ->assertSee('Authorised counsellor only')
-                // Step 2: Inspect student cards (Informed consent verified, Latest Mood, Wellbeing Score)
-                ->assertSee('Informed consent verified')
-                ->assertSee('Latest Mood:')
-                ->assertSee('Wellbeing Score:')
-                ->assertSee('10-Question Wellbeing Reflection Summary')
+                // Step 2: Inspect student cards (Authorised student record, Assigned Role, Support Requests)
+                ->assertSee('Authorised student record')
+                ->assertSee('Assigned Role:')
+                ->assertSee('Support Requests:')
+                ->assertSee('Authorised Support & Session History')
                 ->assertSee('Alex Rivera (Student)')
                 // Step 3: Search by student code "ST-204"
                 ->type('search', 'ST-204')
                 ->press('Search Records')
                 ->assertSee('ST-204')
-                ->assertSee('Alex Rivera (Student)')
-                ->assertSee('21/30');
+                ->assertSee('Alex Rivera (Student)');
         });
     }
 
     /**
      * PBI #5 — TC.CounsellorRole.005 (Positive):
-     * Counsellor views session timetable and creates a structured Student Support Referral.
+     * Counsellor manages time availability slots and approves/declines student concern requests.
      */
-    public function test_tc_counsellor_role_005_counsellor_views_schedule_and_creates_student_support_referral(): void
+    public function test_tc_counsellor_role_005_counsellor_views_schedule_and_navigates_to_request_queue(): void
     {
-        $this->browse(function (Browser $browser) {
-            $counsellor = User::where('email', 'counsellor@gmail.com')->firstOrFail();
+        $futureDate = now()->addDays(7)->format('Y-m-d');
+        $testReq = CounsellingRequest::create([
+            'student_id' => 1,
+            'counsellor_name' => 'Alisa',
+            'concern' => 'Dusk assessment test: exam anxiety and study pacing support.',
+            'goals' => 'Build structured revision schedule.',
+            'appointment_date' => $futureDate,
+            'appointment_time' => '10:00',
+            'appointment_mode' => 'In person',
+            'status' => 'Under Review',
+        ]);
 
-            $browser->loginAs($counsellor)
-                // Step 1: Visit /counsellor/schedule and inspect time slots
-                ->visit('/counsellor/schedule')
-                ->assertPathIs('/counsellor/schedule')
-                ->assertSee('Counsellor Schedule')
-                ->assertSee("Today's sessions & timetable")
-                ->assertSee('09:00')
-                ->assertSee('10:00')
-                ->assertSee('13:30')
-                ->assertSee('15:00')
-                // Step 2: Visit /counsellor/referrals
-                ->visit('/counsellor/referrals')
-                ->assertPathIs('/counsellor/referrals')
-                ->assertSee('Referrals & Follow-Ups')
-                ->assertSee('Student support referrals & follow-up plans')
-                // Step 3: Fill out referral form and click "Save Support Referral"
-                ->type('reason', 'Elevated academic stress and sleep disruption reported in wellbeing reflection.')
-                ->type('support_plan', 'Coordinate academic deadline flexibility and weekly wellbeing follow-up.')
-                ->press('Save Support Referral')
-                ->assertPathIs('/counsellor/referrals')
-                ->assertSee('Created support referral')
-                ->assertSee('Coordinate academic deadline flexibility and weekly wellbeing follow-up.');
-        });
+        try {
+            $this->browse(function (Browser $browser) use ($futureDate, $testReq) {
+                $counsellor = User::where('email', 'counsellor@gmail.com')->firstOrFail();
+
+                $browser->loginAs($counsellor)
+                    // Step 1: Visit /counsellor/schedule and inspect time slots + My Availability Slots
+                    ->visit('/counsellor/schedule')
+                    ->assertPathIs('/counsellor/schedule')
+                    ->assertSee('Counsellor Schedule')
+                    ->assertSee('My Availability Slots')
+                    ->assertSee('Add New Availability')
+                    ->assertSee('09:00')
+                    ->assertSee('10:00')
+                    ->assertSee('13:30')
+                    ->assertSee('15:00')
+                    // Step 2: Add a new availability slot
+                    ->script("
+                        document.querySelector('input[name=\"date\"]').value = '{$futureDate}';
+                        document.querySelector('input[name=\"start_time\"]').value = '09:00';
+                        document.querySelector('input[name=\"end_time\"]').value = '10:00';
+                    ");
+
+                $browser->press('+ Add Availability Slot')
+                    ->assertSee('availability slot(s) added successfully!')
+                    // Step 3: Open Request Queue and Review & Assess a student concern request
+                    ->visit('/dashboard')
+                    ->assertSee('Student Counselling Requests')
+                    ->click("@review-request-{$testReq->request_id}")
+                    ->waitForText('Student Concern Assessment')
+                    ->assertSee('Dusk assessment test: exam anxiety and study pacing support.')
+                    ->type('textarea[placeholder*="Write session preparation notes"]', 'Session approved; we will review your study schedule together.')
+                    ->press('Approve & Confirm Session')
+                    ->assertSee("Request #{$testReq->request_id} updated to Approved.");
+            });
+
+            $this->assertDatabaseHas('counselling_requests', [
+                'id' => $testReq->id,
+                'status' => 'Approved',
+            ]);
+        } finally {
+            $testReq->delete();
+            \App\Models\Availability::where('date', $futureDate)->delete();
+        }
     }
 
     /**
