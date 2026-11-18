@@ -4,6 +4,7 @@ namespace Tests\Browser;
 
 use App\Models\Article;
 use App\Models\ArticleCategory;
+use App\Models\User;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
@@ -19,12 +20,13 @@ class MentalHealthArticleTest extends DuskTestCase
         );
 
         $this->browse(function (Browser $browser) {
-            $browser->visit('/learn')
-                    ->type('search', 'anxious')
-                    ->press('Search')
-                    ->assertSee('Understanding anxious thoughts')
-                    ->clickLink('Read article >')
-                    ->assertSee('Anxiety is a natural stress response');
+            $browser->logout()
+                ->visit('/learn')
+                ->type('search', 'anxious')
+                ->press('Search')
+                ->assertSee('Understanding anxious thoughts')
+                ->clickLink('Read article >')
+                ->assertSee('Anxiety is a natural stress response');
         });
     }
 
@@ -32,10 +34,11 @@ class MentalHealthArticleTest extends DuskTestCase
     public function test_pbi21_negative_unmatched_search_shows_empty_state(): void
     {
         $this->browse(function (Browser $browser) {
-            $browser->visit('/learn')
-                    ->type('search', 'nonexistent_keyword_xyz999')
-                    ->press('Search')
-                    ->assertSee('No articles found');
+            $browser->logout()
+                ->visit('/learn')
+                ->type('search', 'nonexistent_keyword_xyz999')
+                ->press('Search')
+                ->assertSee('No articles found');
         });
     }
 
@@ -48,22 +51,22 @@ class MentalHealthArticleTest extends DuskTestCase
             ['category_id' => $category->id, 'content' => 'Sleep hygiene steps.']
         );
 
-        // Ensure clean unsaved state before testing save
-        $user = \App\Models\User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'student@mindlink.test'],
             ['name' => 'Test Student', 'password' => bcrypt('password')]
         );
         $user->savedArticles()->detach($article->id);
 
         $this->browse(function (Browser $browser) use ($article) {
-            $browser->visit('/learn/' . $article->id)
-                    ->waitForText('Save Article ☆')
-                    ->press('Save Article ☆')
-                    ->waitForText('Article saved for later.')
-                    ->assertSee('Article saved for later.')
-                    ->visit('/learn/saved')
-                    ->waitForText('A practical sleep routine')
-                    ->assertSee('A practical sleep routine');
+            $browser->logout()
+                ->visit('/learn/' . $article->id)
+                ->waitForText('Save Article ☆')
+                ->press('Save Article ☆')
+                ->waitForText('Article saved for later.')
+                ->assertSee('Article saved for later.')
+                ->visit('/learn/saved')
+                ->waitForText('A practical sleep routine')
+                ->assertSee('A practical sleep routine');
         });
     }
 
@@ -76,22 +79,22 @@ class MentalHealthArticleTest extends DuskTestCase
             ['category_id' => $category->id, 'content' => 'Sleep hygiene steps.']
         );
 
-        
-        $user = \App\Models\User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => 'student@mindlink.test'],
             ['name' => 'Test Student', 'password' => bcrypt('password')]
         );
-        $user->savedArticles()->syncWithoutDetaching([$article->id => ['saved_at' => now()]]);
+        $user->savedArticles()->sync([$article->id => ['saved_at' => now()]]);
 
         $this->browse(function (Browser $browser) use ($article) {
-            $browser->visit('/learn/' . $article->id)
-                    ->waitForText('Saved ★ (Click to remove)')
-                    ->press('Saved ★ (Click to remove)')
-                    ->waitForText('Article removed from saved list.')
-                    ->assertSee('Article removed from saved list.')
-                    ->visit('/learn/saved')
-                    ->waitForText('No saved articles yet')
-                    ->assertSee('No saved articles yet');
+            $browser->logout()
+                ->visit('/learn/' . $article->id)
+                ->waitForText('Saved ★ (Click to remove)')
+                ->press('Saved ★ (Click to remove)')
+                ->waitForText('Article removed from saved list.')
+                ->assertSee('Article removed from saved list.')
+                ->visit('/learn/saved')
+                ->waitForText('No saved articles yet')
+                ->assertSee('No saved articles yet');
         });
     }
 
@@ -102,12 +105,12 @@ class MentalHealthArticleTest extends DuskTestCase
 
         $this->browse(function (Browser $browser) use ($category) {
             $browser->visit('/admin/articles/create')
-                    ->type('title', 'Exam Stress Guide')
-                    ->select('category_id', $category->id)
-                    ->type('content', 'Tips for managing exam pressure.')
-                    ->press('Publish Article')
-                    ->assertSee('Article created successfully.')
-                    ->assertSee('Exam Stress Guide');
+                ->type('title', 'Exam Stress Guide')
+                ->select('category_id', $category->id)
+                ->type('content', 'Tips for managing exam pressure.')
+                ->press('Publish Article')
+                ->assertSee('Article created successfully.')
+                ->assertSee('Exam Stress Guide');
         });
     }
 
@@ -116,15 +119,15 @@ class MentalHealthArticleTest extends DuskTestCase
     {
         $this->browse(function (Browser $browser) {
             $browser->visit('/admin/articles/create')
-                    ->script([
-                        "document.querySelector('input[name=\"title\"]').removeAttribute('required');",
-                        "document.querySelector('textarea[name=\"content\"]').removeAttribute('required');"
-                    ]);
+                ->script([
+                    "document.querySelector('input[name=\"title\"]').removeAttribute('required');",
+                    "document.querySelector('textarea[name=\"content\"]').removeAttribute('required');",
+                ]);
 
             $browser->press('Publish Article')
-                    ->assertPathIs('/admin/articles/create')
-                    ->assertSee('The title field is required.')
-                    ->assertSee('The content field is required.');
+                ->assertPathIs('/admin/articles/create')
+                ->assertSee('The title field is required.')
+                ->assertSee('The content field is required.');
         });
     }
 }

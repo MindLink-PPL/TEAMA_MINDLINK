@@ -74,26 +74,45 @@
                         <span>Users & Roles</span>
                     </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('admin.articles.index') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.articles.*') ? 'bg-[#1b3d66] text-white shadow-sm' : 'text-slate-300 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold {{ request()->routeIs('admin.articles.*') ? 'bg-[#14b8a6] text-white' : 'bg-[#1c4068] text-teal-300' }}">
                             C
                         </div>
                         <span>Content</span>
-                    </div>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ route('admin.quiz.index') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.quiz.*') ? 'bg-[#1b3d66] text-white shadow-sm' : 'text-slate-300 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold {{ request()->routeIs('admin.quiz.*') ? 'bg-[#14b8a6] text-white' : 'bg-[#1c4068] text-teal-300' }}">
+                            Q
+                        </div>
+                        <span>Wellbeing Quizzes</span>
+                    </a>
+
+                    <a
+                        href="{{ route('admin.dashboard') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.dashboard') ? 'bg-[#1b3d66] text-white shadow-sm' : 'text-slate-300 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold {{ request()->routeIs('admin.dashboard') ? 'bg-[#14b8a6] text-white' : 'bg-[#1c4068] text-teal-300' }}">
                             S
                         </div>
-                        <span>Schedules</span>
-                    </div>
+                        <span>Schedules & Verification</span>
+                    </a>
 
-                    <div class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-400 opacity-60 cursor-not-allowed">
-                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-slate-400 flex items-center justify-center text-xs font-bold">
+                    <a
+                        href="{{ url('/admin/consents') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition text-slate-300 hover:bg-[#153457] hover:text-white"
+                    >
+                        <div class="w-7 h-7 rounded-full bg-[#1c4068] text-teal-300 flex items-center justify-center text-xs font-bold">
                             R
                         </div>
-                        <span>Reports</span>
-                    </div>
+                        <span>Reports & Consents</span>
+                    </a>
 
                 @elseif ($isCounsellor)
                     <!-- Counsellor Navigation (Matching PG-05) -->
@@ -180,6 +199,16 @@
                     </a>
 
                     <a
+                        href="{{ route('quiz.index') }}"
+                        class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('quiz.*') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
+                    >
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-[#f58a42] text-white">
+                            Q
+                        </div>
+                        <span>Self Check-In Quizzes</span>
+                    </a>
+
+                    <a
                         href="{{ route('student.counselling') }}"
                         class="flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('student.counselling*', 'student.schedule') ? 'bg-[#214b6e] text-white shadow-sm' : 'text-slate-200 hover:bg-[#153457] hover:text-white' }}"
                     >
@@ -202,7 +231,7 @@
             </nav>
         </div>
 
-        <!-- Bottom User Profile Card (Matching Figma "Admin / Secure account") -->
+        <!-- Bottom User Profile Card -->
         <div class="p-4 border-t border-[#1b3d66]" x-data="{ userMenu: false }">
             <div class="relative">
                 <button

@@ -30,6 +30,14 @@
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">S</span>
                         Saved Articles
                     </a>
+                    <a href="{{ route('quiz.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">W</span>
+                        Wellbeing
+                    </a>
+                    <a href="{{ route('counselling.request') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                        <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">C</span>
+                        Counselling
+                    </a>
                 </nav>
             </div>
             <div class="p-4 m-4 bg-slate-800/60 rounded-2xl border border-slate-700/50 flex items-center space-x-3">
@@ -47,13 +55,13 @@
             <header class="bg-slate-50 border-b border-slate-200 px-8 py-5 flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-slate-900">Mental Health Literacy</h2>
                 <div class="flex items-center space-x-3">
-            <a href="{{ route('articles.saved') }}" class="bg-white hover:bg-slate-100 text-slate-700 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200 transition">
-                Saved ({{ count($savedArticleIds) }})
-            </a>
-            <div class="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
-                Student portal
-            </div>
-        </div>>
+                    <a href="{{ route('articles.saved') }}" class="bg-white hover:bg-slate-100 text-slate-700 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200 transition">
+                        Saved ({{ count($savedArticleIds) }})
+                    </a>
+                    <div class="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
+                        Student portal
+                    </div>
+                </div>
             </header>
 
             <div class="p-8 max-w-7xl mx-auto w-full space-y-6">
@@ -123,13 +131,13 @@
                                     <div class="flex items-center space-x-3">
                                         <form action="{{ route('articles.toggleSave', $article) }}" method="POST">
                                             @csrf
-                                                <button type="submit" class="font-semibold {{ $isSaved ? 'text-amber-600' : 'text-slate-500 hover:text-teal-700' }}">
+                                            <button type="submit" class="font-semibold {{ $isSaved ? 'text-amber-600' : 'text-slate-500 hover:text-teal-700' }}">
                                                 {{ $isSaved ? 'Saved ★' : 'Save ☆' }}
                                             </button>
                                         </form>
-                                            <a href="{{ route('articles.show', $article) }}" class="font-semibold text-teal-700 hover:underline">
-                                                Read article &gt;
-                                     </a>
+                                        <a href="{{ route('articles.show', $article) }}" class="font-semibold text-teal-700 hover:underline">
+                                            Read article &gt;
+                                        </a>
                                     </div>
                                 </div>
                             </div>

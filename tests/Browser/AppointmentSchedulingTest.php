@@ -6,34 +6,43 @@ use App\Models\Appointment;
 use App\Models\Availability;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Dusk\Browser;
 use Tests\DuskTestCase;
 
 class AppointmentSchedulingTest extends DuskTestCase
 {
-    use DatabaseMigrations;
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Appointment::query()->delete();
+        Availability::query()->delete();
+    }
 
     private function createStudent(string $email = 'student@test.com'): User
     {
-        return User::create([
-            'name' => 'Test Student',
-            'email' => $email,
-            'password' => Hash::make('password123'),
-            'role' => 'student',
-        ]);
+        return User::updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => 'Test Student',
+                'password' => Hash::make('password123'),
+                'role' => 'student',
+            ]
+        );
     }
 
     private function createCounsellor(): User
     {
-        return User::create([
-            'name' => 'Test Counsellor',
-            'email' => 'counsellor@test.com',
-            'password' => Hash::make('password123'),
-            'role' => 'counsellor',
-            'verification_status' => 'verified',
-        ]);
+        return User::updateOrCreate(
+            ['email' => 'counsellor@test.com'],
+            [
+                'name' => 'Test Counsellor',
+                'password' => Hash::make('password123'),
+                'role' => 'counsellor',
+                'verification_status' => 'verified',
+            ]
+        );
     }
 
     private function addAvailability(
@@ -41,7 +50,7 @@ class AppointmentSchedulingTest extends DuskTestCase
         string $date,
         string $time
     ): void {
-        Availability::create([
+        Availability::firstOrCreate([
             'counsellor_id' => $counsellor->id,
             'date' => $date,
             'time' => $time,
@@ -73,30 +82,25 @@ class AppointmentSchedulingTest extends DuskTestCase
             $newDate
         ) {
             // BOOK APPOINTMENT
-$browser->loginAs($student)
-    ->visit('/student/appointments')
-    ->pause(3000)
-    ->screenshot('debug-student-page')
-    ->assertPathIs('/student/appointments')
+            $browser->loginAs($student)
+                ->visit('/student/appointments')
+                ->assertPathIs('/student/appointments')
                 ->waitUntil(
-                    "document.querySelector('#counsellor option[value=\"{$counsellor->id}\"]') !== null"
+                    "document.querySelector('#counsellor option[value=\"{$counsellor->id}\"]') !== null",
+                    10
                 )
+                ->select('#counsellor', (string) $counsellor->id)
+                ->script("
+                    const dateInput = document.querySelector('#date');
+                    dateInput.value = '{$date}';
+                    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                ");
 
-->select('#counsellor', (string) $counsellor->id)
-
-// Set the date correctly using JavaScript
-->script("
-    const dateInput = document.querySelector('#date');
-    dateInput.value = '{$date}';
-    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
-    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
-")
-
-->waitUntil(
-    "document.querySelector('#time option[value=\"09:00\"]') !== null",
-    10
-)
-
+            $browser->waitUntil(
+                "document.querySelector('#time option[value=\"09:00\"]') !== null",
+                10
+            )
                 ->select('#time', '09:00')
                 ->select('#mode', 'Online')
                 ->press('Confirm Booking')
@@ -167,11 +171,18 @@ $browser->loginAs($student)
                 ->visit('/student/appointments')
                 ->waitFor('#counsellor')
                 ->waitUntil(
-                    "document.querySelector('#counsellor option[value=\"{$counsellor->id}\"]') !== null"
+                    "document.querySelector('#counsellor option[value=\"{$counsellor->id}\"]') !== null",
+                    10
                 )
                 ->select('#counsellor', (string) $counsellor->id)
-                ->type('#date', $date)
-                ->waitForText('No available slots', '#time')
+                ->script("
+                    const dateInput = document.querySelector('#date');
+                    dateInput.value = '{$date}';
+                    dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+                ");
+
+            $browser->waitForText('No available slots', 10)
                 ->assertSeeIn('#time', 'No available slots')
                 ->screenshot('TC-002-occupied-slot');
         });

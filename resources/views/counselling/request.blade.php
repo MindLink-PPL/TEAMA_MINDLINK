@@ -20,15 +20,15 @@
                 </div>
 
                 <nav class="mt-4 px-4 space-y-1">
-                    <a href="#" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                    <a href="{{ url('/dashboard') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">D</span>
                         Dashboard
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                    <a href="{{ route('articles.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">L</span>
                         Learn
                     </a>
-                    <a href="#" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
+                    <a href="{{ route('quiz.index') }}" class="flex items-center px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl transition">
                         <span class="w-6 h-6 mr-3 flex items-center justify-center rounded-full bg-slate-800 text-xs text-teal-400 font-bold">W</span>
                         Wellbeing
                     </a>
@@ -280,16 +280,16 @@
                                 </div>
 
                                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 text-sm text-slate-700">
+                                    <div>
+                                        <span class="font-bold text-xs uppercase text-slate-400 block">Concern:</span>
+                                        <p x-text="concern" class="mt-0.5 text-slate-900 font-medium break-all"></p>
+                                    </div>
+                                    <template x-if="goals">
                                         <div>
-                                            <span class="font-bold text-xs uppercase text-slate-400 block">Concern:</span>
-                                            <p x-text="concern" class="mt-0.5 text-slate-900 font-medium break-all"></p> <!-- Added break-all -->
+                                            <span class="font-bold text-xs uppercase text-slate-400 block">Counselling Goals:</span>
+                                            <p x-text="goals" class="mt-0.5 text-slate-900 font-medium break-all"></p>
                                         </div>
-                                        <template x-if="goals">
-                                            <div>
-                                                <span class="font-bold text-xs uppercase text-slate-400 block">Counselling Goals:</span>
-                                                <p x-text="goals" class="mt-0.5 text-slate-900 font-medium break-all"></p> <!-- Added break-all -->
-                                            </div>
-                                        </template>
+                                    </template>
                                     <div>
                                         <span class="font-bold text-xs uppercase text-slate-400 block">Chosen Counsellor:</span>
                                         <p x-text="selectedCounsellorName" class="mt-0.5 text-teal-700 font-bold"></p>
@@ -314,12 +314,12 @@
                         </template>
                     </div>
 
-                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5 flex flex-col justify-between overflow-hidden"> <!-- Added overflow-hidden -->
+                    <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 space-y-5 flex flex-col justify-between overflow-hidden">
                         <div class="space-y-4">
                             <h4 class="text-lg font-bold text-slate-900">Your request</h4>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Concern</p>
-                                <p class="text-sm font-medium text-slate-800 mt-0.5 break-all" x-text="concern || 'Pending input...'"></p> <!-- Changed truncate to break-all -->
+                                <p class="text-sm font-medium text-slate-800 mt-0.5 break-all" x-text="concern || 'Pending input...'"></p>
                             </div>
                             <div>
                                 <p class="text-xs text-slate-400 font-medium uppercase">Consent</p>

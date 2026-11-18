@@ -425,6 +425,14 @@ abstract class DuskTestCase extends BaseTestCase
             }
 
             /**
+             * Override jQuery injection so Dusk never fails if vendor/laravel/dusk/bin/jquery.js is absent.
+             */
+            public function ensurejQueryIsAvailable()
+            {
+                // Native DOM queries are used instead of jQuery.
+            }
+
+            /**
              * Build an ElementResolver that matches uppercase CSS-transformed button labels.
              */
             protected function makeElementResolver($driver, string $prefix = 'body'): ElementResolver
@@ -495,37 +503,38 @@ abstract class DuskTestCase extends BaseTestCase
             }
 
             /**
-             * Wait for full-page navigation when clicking an anchor link.
+             * Click a link by visible text using native DOM queries (without requiring jquery.js).
              */
             public function clickLink($link, $element = 'a')
             {
-                $this->driver->executeScript("
-                    window.__duskPreClick = true;
-                    window.__duskLinkNavigating = false;
-                    if (window.__duskLinkHandler) {
-                        document.removeEventListener('click', window.__duskLinkHandler);
+                $selector = $this->resolver->format($element);
+
+                $clicked = $this->driver->executeScript("
+                    const selector = arguments[0];
+                    const targetText = arguments[1].trim();
+                    const nodes = Array.from(document.querySelectorAll(selector));
+                    const match = nodes.find(el => {
+                        const txt = (el.innerText || el.textContent || '').replace(/\\s+/g, ' ').trim();
+                        return txt === targetText || txt.toLowerCase() === targetText.toLowerCase() || txt.includes(targetText);
+                    });
+
+                    if (!match) {
+                        return false;
                     }
-                    window.__duskLinkHandler = function (e) {
-                        const anchor = e.target.closest('a[href]');
-                        if (anchor && !e.defaultPrevented) {
-                            const href = anchor.getAttribute('href') || '';
-                            if (href !== '' && !href.startsWith('#')) {
-                                window.__duskLinkNavigating = true;
-                            }
-                        }
-                    };
-                    document.addEventListener('click', window.__duskLinkHandler, { once: true });
-                ");
 
-                parent::clickLink($link, $element);
+                    window.__duskPreClick = true;
+                    const href = match.getAttribute('href') || '';
+                    const willNavigate = href !== '' && !href.startsWith('#') && !href.startsWith('javascript:');
+                    match.scrollIntoView({ block: 'center', inline: 'nearest' });
+                    match.click();
+                    return willNavigate;
+                ", [$selector, $link]);
 
-                try {
-                    $navigating = $this->driver->executeScript('return window.__duskLinkNavigating === true;');
-                } catch (Throwable) {
-                    $navigating = true;
+                if ($clicked === false) {
+                    throw new NoSuchElementException("Unable to locate link [{$link}] with selector [{$selector}].");
                 }
 
-                if ($navigating) {
+                if ($clicked === true) {
                     $this->waitForPendingNavigation();
                 }
 
@@ -617,35 +626,55 @@ abstract class DuskTestCase extends BaseTestCase
             }
 
             /**
-             * Scroll an element into the center of the viewport before clicking and await full-page submit redirects.
+             * Scroll an element into the center of the viewport before clicking.
+             * Only poll for form-submit navigation if the clicked element can actually submit a form
+             * (prevents executeScript from auto-dismissing window.prompt / window.confirm dialogs).
              */
             protected function clickElementSafely($element): static
             {
-                $this->driver->executeScript("
-                    window.__duskPreClick = true;
-                    window.__duskFormSubmitted = false;
-                    if (window.__duskSubmitHandler) {
-                        document.removeEventListener('submit', window.__duskSubmitHandler);
+                $canSubmitForm = (bool) $this->driver->executeScript("
+                    const el = arguments[0];
+                    el.scrollIntoView({ block: 'center', inline: 'nearest' });
+
+                    const inForm = el.closest('form') !== null;
+                    const tag = (el.tagName || '').toLowerCase();
+                    const type = (el.getAttribute('type') || '').toLowerCase();
+                    const hasOnClickDialog = /prompt\\(|confirm\\(|alert\\(|rescheduleAppointment|cancelAppointment/.test(el.getAttribute('onclick') || '');
+
+                    if (hasOnClickDialog) {
+                        return false;
                     }
-                    window.__duskSubmitHandler = function (e) {
-                        if (!e.defaultPrevented) {
-                            window.__duskFormSubmitted = true;
+
+                    if (inForm && (type === 'submit' || (tag === 'button' && type !== 'button'))) {
+                        window.__duskPreClick = true;
+                        window.__duskFormSubmitted = false;
+                        if (window.__duskSubmitHandler) {
+                            document.removeEventListener('submit', window.__duskSubmitHandler);
                         }
-                    };
-                    document.addEventListener('submit', window.__duskSubmitHandler, { once: true });
-                    arguments[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+                        window.__duskSubmitHandler = function (e) {
+                            if (!e.defaultPrevented) {
+                                window.__duskFormSubmitted = true;
+                            }
+                        };
+                        document.addEventListener('submit', window.__duskSubmitHandler, { once: true });
+                        return true;
+                    }
+
+                    return false;
                 ", [$element]);
 
                 $element->click();
 
-                try {
-                    $submitted = $this->driver->executeScript('return window.__duskFormSubmitted === true;');
-                } catch (Throwable) {
-                    $submitted = true;
-                }
+                if ($canSubmitForm) {
+                    try {
+                        $submitted = $this->driver->executeScript('return window.__duskFormSubmitted === true;');
+                    } catch (Throwable) {
+                        $submitted = false;
+                    }
 
-                if ($submitted) {
-                    $this->waitForPendingNavigation();
+                    if ($submitted) {
+                        $this->waitForPendingNavigation();
+                    }
                 }
 
                 return $this;
