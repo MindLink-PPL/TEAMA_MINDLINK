@@ -27,7 +27,7 @@ use Throwable;
 abstract class DuskTestCase extends BaseTestCase
 {
     /**
-     * Background ChromeDriver process handle started via proc_open.
+     * Background WebDriver process handle started via proc_open.
      *
      * @var resource|null
      */
@@ -41,9 +41,14 @@ abstract class DuskTestCase extends BaseTestCase
     protected static $webServerHandle = null;
 
     /**
-     * Port bound by the active ChromeDriver instance.
+     * Port bound by the active WebDriver instance.
      */
     protected static int $chromeDriverPort = 9515;
+
+    /**
+     * Cached detection result for whether the driver binary is Microsoft Edge WebDriver.
+     */
+    protected static ?bool $isEdgeDriverBinary = null;
 
     /**
      * Whether the process shutdown cleanup handler has been registered.
@@ -76,6 +81,15 @@ abstract class DuskTestCase extends BaseTestCase
         if (config('database.default') === 'sqlite') {
             config(['database.connections.sqlite.database' => database_path('database.sqlite')]);
             DB::purge('sqlite');
+        } else {
+            config([
+                'database.connections.mysql.host' => env('DB_HOST', '127.0.0.1'),
+                'database.connections.mysql.port' => env('DB_PORT', '3308'),
+                'database.connections.mysql.database' => env('DB_DATABASE', 'ppl_mindlink'),
+                'database.connections.mysql.username' => env('DB_USERNAME', 'root'),
+                'database.connections.mysql.password' => env('DB_PASSWORD', ''),
+            ]);
+            DB::purge('mysql');
         }
 
         $this->seed(DatabaseSeeder::class);
@@ -222,6 +236,69 @@ abstract class DuskTestCase extends BaseTestCase
     }
 
     /**
+     * Resolve the path to the Dusk WebDriver binary.
+     */
+    protected static function resolveDriverBinaryPath(): string
+    {
+        $basePath = dirname(__DIR__);
+        $driverPath = static::$chromeDriver;
+
+        if (! $driverPath) {
+            $filenames = [
+                'linux' => 'chromedriver-linux',
+                'linux-arm' => 'chromedriver-linux-arm',
+                'mac' => 'chromedriver-mac',
+                'mac-intel' => 'chromedriver-mac-intel',
+                'mac-arm' => 'chromedriver-mac-arm',
+                'win' => 'chromedriver-win.exe',
+            ];
+
+            $driverPath = $basePath . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'laravel' . DIRECTORY_SEPARATOR . 'dusk' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $filenames[OperatingSystem::id()];
+        }
+
+        $resolved = realpath($driverPath);
+        if ($resolved === false) {
+            throw new RuntimeException("Invalid path to WebDriver [{$driverPath}].");
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * Detect whether the installed Dusk driver binary is Microsoft Edge WebDriver (msedgedriver) or Google ChromeDriver.
+     */
+    protected static function isEdgeDriverBinary(): bool
+    {
+        $explicit = strtolower((string) env('DUSK_BROWSER', ''));
+        if ($explicit === 'chrome') {
+            return false;
+        }
+        if ($explicit === 'edge') {
+            return true;
+        }
+
+        if (static::$isEdgeDriverBinary !== null) {
+            return static::$isEdgeDriverBinary;
+        }
+
+        try {
+            $binaryContents = @file_get_contents(static::resolveDriverBinaryPath());
+            if ($binaryContents !== false) {
+                static::$isEdgeDriverBinary = str_contains($binaryContents, 'ms:edgeOptions')
+                    && ! str_contains($binaryContents, 'goog:chromeOptions');
+
+                return static::$isEdgeDriverBinary;
+            }
+        } catch (Throwable) {
+            // Fall through to default detection.
+        }
+
+        static::$isEdgeDriverBinary = false;
+
+        return false;
+    }
+
+    /**
      * Automatically start a clean WebDriver instance once per suite with a writable temp directory.
      */
     protected static function ensureChromeDriverRunning(): void
@@ -247,25 +324,7 @@ abstract class DuskTestCase extends BaseTestCase
         }
 
         $basePath = dirname(__DIR__);
-        $driverPath = static::$chromeDriver;
-
-        if (! $driverPath) {
-            $filenames = [
-                'linux' => 'chromedriver-linux',
-                'linux-arm' => 'chromedriver-linux-arm',
-                'mac' => 'chromedriver-mac',
-                'mac-intel' => 'chromedriver-mac-intel',
-                'mac-arm' => 'chromedriver-mac-arm',
-                'win' => 'chromedriver-win.exe',
-            ];
-
-            $driverPath = $basePath . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'laravel' . DIRECTORY_SEPARATOR . 'dusk' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . $filenames[OperatingSystem::id()];
-        }
-
-        $resolved = realpath($driverPath);
-        if ($resolved === false) {
-            throw new RuntimeException("Invalid path to WebDriver [{$driverPath}].");
-        }
+        $resolved = static::resolveDriverBinaryPath();
 
         $env = static::buildCleanEnvironment(OperatingSystem::onWindows() || OperatingSystem::onMac() ? [] : [
             'DISPLAY' => $_ENV['DISPLAY'] ?? ':0',
@@ -301,8 +360,12 @@ abstract class DuskTestCase extends BaseTestCase
 
         $env = static::buildCleanEnvironment([
             'APP_URL' => 'http://127.0.0.1:8000',
-            'DB_CONNECTION' => $_ENV['DB_CONNECTION'] ?? $_SERVER['DB_CONNECTION'] ?? (getenv('DB_CONNECTION') ?: 'sqlite'),
-            'DB_DATABASE' => $basePath . DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'database.sqlite',
+            'DB_CONNECTION' => getenv('DB_CONNECTION') ?: 'mysql',
+            'DB_HOST' => getenv('DB_HOST') ?: '127.0.0.1',
+            'DB_PORT' => getenv('DB_PORT') ?: '3308',
+            'DB_DATABASE' => getenv('DB_DATABASE') ?: 'ppl_mindlink',
+            'DB_USERNAME' => getenv('DB_USERNAME') ?: 'root',
+            'DB_PASSWORD' => getenv('DB_PASSWORD') ?: '',
             'CACHE_STORE' => 'file',
             'SESSION_DRIVER' => 'file',
         ]);
@@ -354,11 +417,11 @@ abstract class DuskTestCase extends BaseTestCase
     }
 
     /**
-     * Create the RemoteWebDriver instance.
+     * Create the RemoteWebDriver instance, supporting both Microsoft Edge and Google Chrome automatically.
      */
     protected function driver(): RemoteWebDriver
     {
-        $options = (new ChromeOptions)->addArguments(collect([
+        $arguments = collect([
             $this->shouldStartMaximized() ? '--start-maximized' : '--window-size=1920,1080',
             '--disable-search-engine-choice-screen',
             '--disable-smooth-scrolling',
@@ -368,17 +431,56 @@ abstract class DuskTestCase extends BaseTestCase
             return $items->merge([
                 '--headless=new',
             ]);
-        })->all());
+        })->all();
 
         $driverUrl = $_ENV['DUSK_DRIVER_URL'] ?? env('DUSK_DRIVER_URL') ?? ('http://127.0.0.1:' . static::$chromeDriverPort);
 
-        return RemoteWebDriver::create(
-            $driverUrl,
-            DesiredCapabilities::chrome()->setCapability(
-                ChromeOptions::CAPABILITY,
-                $options
-            )
-        );
+        $createEdgeDriver = function () use ($arguments, $driverUrl): RemoteWebDriver {
+            $edgeOptions = (new ChromeOptions)->addArguments($arguments);
+
+            $edgeBinary = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+            $edgeBinary64 = 'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe';
+
+            if (file_exists($edgeBinary)) {
+                $edgeOptions->setBinary($edgeBinary);
+            } elseif (file_exists($edgeBinary64)) {
+                $edgeOptions->setBinary($edgeBinary64);
+            }
+
+            return RemoteWebDriver::create(
+                $driverUrl,
+                new DesiredCapabilities([
+                    WebDriverCapabilityType::BROWSER_NAME => 'MicrosoftEdge',
+                    'ms:edgeOptions' => $edgeOptions->toArray(),
+                ])
+            );
+        };
+
+        $createChromeDriver = function () use ($arguments, $driverUrl): RemoteWebDriver {
+            $chromeOptions = (new ChromeOptions)->addArguments($arguments);
+
+            return RemoteWebDriver::create(
+                $driverUrl,
+                DesiredCapabilities::chrome()->setCapability(
+                    ChromeOptions::CAPABILITY,
+                    $chromeOptions
+                )
+            );
+        };
+
+        if (static::isEdgeDriverBinary()) {
+            try {
+                return $createEdgeDriver();
+            } catch (Throwable) {
+                return $createChromeDriver();
+            }
+        }
+
+        try {
+            return $createChromeDriver();
+        } catch (Throwable) {
+            return $createEdgeDriver();
+        }
     }
 
     /**
@@ -600,8 +702,6 @@ abstract class DuskTestCase extends BaseTestCase
 
             /**
              * Scroll an element into the center of the viewport before clicking.
-             * Only poll for form-submit navigation if the clicked element can actually submit a form
-             * (prevents executeScript from auto-dismissing window.prompt / window.confirm dialogs).
              */
             protected function clickElementSafely($element): static
             {
